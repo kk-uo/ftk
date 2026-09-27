@@ -1,17 +1,17 @@
-# 项目简介
+# Forgotten Three Kingdoms
 
-本项目是一个基于 Godot 4.6 .NET 与 C# 的桌面端卡牌战斗原型。
+A desktop card-battle prototype built with **Godot 4.6 .NET** and **C#**.
 
-核心体验是：
+Core features:
 
-- 回合制卡牌对抗
-- 角色、技能、装备、Buff、事件共同驱动局内成长
-- 中文 UI 与本地化文本
-- 通过 Trigger、Reward、Damage、Presentation 分层降低系统耦合
+- Turn-based card combat.
+- In-run progression driven by characters, skills, equipment, buffs, and events.
+- Chinese and English localization.
+- Separate Trigger, Reward, Damage, and Presentation systems to reduce coupling.
 
-项目默认分辨率为 `2560 x 1440`，主要 UI 使用 `NotoSerifCJKsc-Black.otf`。
+The default resolution is `2560 x 1440`. The main UI font is `NotoSerifCJKsc-Black.otf`.
 
-## 整体架构
+## Architecture
 
 ```text
 Data
@@ -26,54 +26,54 @@ Presentation
 UI
 ```
 
-- `Data`：角色、敌人、装备、技能、事件、Buff、关卡等静态定义。
-- `Logic`：战斗、伤害、奖励、触发器、商店、背包、事件等规则。
-- `Presentation`：战斗提示、浮动数字、日志、选择面板等表现协调。
-- `UI`：Godot Control 节点、场景、按钮、卡片、面板。
+- **Data:** Static definitions for characters, enemies, equipment, skills, events, buffs, and stages.
+- **Logic:** Rules for combat, damage, rewards, triggers, shops, inventory, and events.
+- **Presentation:** Coordination of combat feedback, floating numbers, logs, and choice panels.
+- **UI:** Godot Control nodes, scenes, buttons, cards, and panels.
 
-规则层不能直接承担表现层职责。新增功能时优先判断它属于数据、逻辑、表现还是 UI，再放入对应模块。
+The rules layer should not take on presentation responsibilities. Before adding a feature, identify whether it belongs to Data, Logic, Presentation, or UI, then place it in the appropriate module.
 
-## 项目目录说明
+## Project Structure
 
 ```text
 Assets/
-  字体、图片等资源。
+  Fonts, images, and other assets.
 
 Scenes/
-  Godot 场景文件。
+  Godot scene files.
 
 Scripts/
-  C# 业务代码与 UI 控制脚本。
+  C# game logic and UI controllers.
 
 Scripts/Battle/
-  战斗生命周期与结算效果。
+  Combat lifecycle and resolution effects.
 
 Scripts/Damage/
-  伤害、防御、濒死、死亡与伤害修正效果。
+  Damage, defense, dying, death, and damage modifiers.
 
 Scripts/Equipment/
-  装备触发效果。
+  Equipment trigger effects.
 
 Scripts/Presentation/
-  图片、动画、武器、特效、音效和 UI 表现框架。
+  Visuals, animations, weapons, effects, audio, and UI presentation.
 
 Scripts/Reactions/
-  实时反应窗口选项。
+  Real-time reaction window options.
 
 Scripts/SkillEffects/
-  技能定义层效果。
+  Effects associated with skill definitions.
 
 Scripts/Skills/
-  角色、Boss、事件技能的战斗效果。
+  Combat effects for character, boss, and event skills.
 ```
 
-## 各系统介绍
+## Systems
 
 ### Battle
 
-负责战斗生命周期、阶段推进、出牌栏、目标选择、日志与表现协调。
+Manages the combat lifecycle, phase progression, action bar, target selection, logs, and presentation coordination.
 
-主要入口：
+Main entry points:
 
 - `BattleManager`
 - `BattleContext`
@@ -82,9 +82,9 @@ Scripts/Skills/
 
 ### Trigger
 
-负责把技能、装备、Buff、战斗生命周期效果统一挂接到 `TriggerTiming`。
+Connects skills, equipment, buffs, and combat lifecycle effects to a shared `TriggerTiming` system.
 
-主要入口：
+Main entry points:
 
 - `TriggerManager`
 - `IBattleEffect`
@@ -94,9 +94,9 @@ Scripts/Skills/
 
 ### Damage
 
-负责伤害实例、防御窗口、伤害修正、实际扣血、濒死与死亡。
+Handles damage instances, defense windows, damage modifiers, HP loss, dying, and death.
 
-主要入口：
+Main entry points:
 
 - `DamageEffects`
 - `DamageModifierPipeline`
@@ -104,9 +104,9 @@ Scripts/Skills/
 
 ### Reward
 
-负责统一执行奖励动作，避免事件、商店、Debug 直接修改玩家状态。
+Executes reward actions through a shared system so that events, shops, and debug tools do not modify player state directly.
 
-主要入口：
+Main entry points:
 
 - `RewardManager`
 - `RewardSequence`
@@ -114,9 +114,9 @@ Scripts/Skills/
 
 ### Localization
 
-负责中文、英文文本查询、语言切换、名称和描述获取。
+Handles Chinese and English text lookup, language switching, and localized names and descriptions.
 
-主要入口：
+Main entry points:
 
 - `Localization`
 - `LocalizationGlossary`
@@ -124,9 +124,9 @@ Scripts/Skills/
 
 ### Presentation
 
-负责把逻辑结果转换为玩家可见反馈。
+Converts gameplay results into visible feedback for the player.
 
-核心入口：
+Main entry points:
 
 - `PresentationManager`
 - `PresentationEvent`
@@ -137,13 +137,13 @@ Scripts/Skills/
 - `InteractionPresenter`
 - `UIPresenter`
 
-新增动画和演出时，优先增加 Presentation 层接口，不要让 Battle 或 Damage 直接播放动画。
+When adding animations or visual sequences, extend the Presentation layer rather than playing animations directly from Battle or Damage code.
 
 ### Tutorial
 
-负责新手引导步骤、触发条件、遮罩箭头和教学战斗。
+Manages tutorial steps, trigger conditions, overlay highlights, arrows, and training battles.
 
-主要入口：
+Main entry points:
 
 - `TutorialManager`
 - `TutorialDatabase`
@@ -152,9 +152,9 @@ Scripts/Skills/
 
 ### Inventory
 
-负责装备持有、背包、已装备槽位、出售、拖拽和装备详情。
+Manages owned equipment, inventory, equipped slots, selling, drag-and-drop interactions, and equipment details.
 
-主要入口：
+Main entry points:
 
 - `InventoryManager`
 - `InventoryController`
@@ -163,9 +163,9 @@ Scripts/Skills/
 
 ### Shop
 
-负责商店商品生成、价格、购买和商品 UI。
+Handles shop inventory generation, pricing, purchases, and item UI.
 
-主要入口：
+Main entry points:
 
 - `ShopManager`
 - `ShopController`
@@ -173,67 +173,67 @@ Scripts/Skills/
 
 ### Event
 
-负责地图事件、事件选项、事件条件、事件奖励与事件跳转。
+Manages map events, options, conditions, rewards, and transitions between events.
 
-主要入口：
+Main entry points:
 
 - `EventManager`
 - `EventDatabase`
 - `EventController`
 - `EventData`
 
-## 新增一个角色需要修改哪些地方
+## Adding a Character
 
-1. 在 `CharacterDatabase` 增加角色数据。
-2. 在 Localization 中增加角色名称、描述、阵营等文本。
-3. 如果角色有默认技能，在 `SkillDatabase` 增加技能定义。
-4. 如果技能有战斗效果，在 `Skills/` 或 `SkillEffects/` 增加对应效果。
-5. 通过 `TriggerManager` 注册战斗效果，不要在 `BattleManager` 写角色专属判断。
-6. 更新图鉴、角色选择或测试入口。
+1. Add character data to `CharacterDatabase`.
+2. Add localized text for the character's name, description, faction, and other details.
+3. If the character has default skills, add their definitions to `SkillDatabase`.
+4. Implement combat effects in `Skills/` or `SkillEffects/` as appropriate.
+5. Register combat effects through `TriggerManager`; avoid character-specific checks in `BattleManager`.
+6. Update the codex, character selection, or relevant test entry points.
 
-## 新增一个装备需要修改哪些地方
+## Adding Equipment
 
-1. 在 `EquipmentIds` 增加稳定 ID。
-2. 在 `EquipmentDatabase` 增加装备定义。
-3. 在 Localization 中增加装备名称和描述。
-4. 如果装备有战斗效果，在 `Scripts/Equipment/` 增加 `IBattleEffect`。
-5. 如需随机出现，确认 `CanAppearInRandomPool`、品质、类型、获取方式。
-6. 如需商店出现，确认商店池筛选规则。
+1. Add a stable ID to `EquipmentIds`.
+2. Add the equipment definition to `EquipmentDatabase`.
+3. Add localized equipment names and descriptions.
+4. Implement combat effects as `IBattleEffect` in `Scripts/Equipment/`.
+5. For random drops, verify `CanAppearInRandomPool`, rarity, type, and acquisition source.
+6. For shop availability, verify the shop pool filtering rules.
 
-## 新增一个事件需要修改哪些地方
+## Adding an Event
 
-1. 在 `EventDatabase` 或对应事件工厂增加事件定义。
-2. 事件奖励优先使用 `RewardSequence` 和 `RewardAction`。
-3. 需要选择时使用 `ChoicePanel` 与 `ChoiceProvider`。
-4. 事件文本必须进入 Localization。
-5. RunOnce、章节、稀有度、隐藏条件在事件数据中表达。
-6. 不要在事件选项里直接改玩家数据。
+1. Add an event definition to `EventDatabase` or the appropriate event factory.
+2. Prefer `RewardSequence` and `RewardAction` for event rewards.
+3. Use `ChoicePanel` and `ChoiceProvider` when a choice is required.
+4. Put all event text in Localization.
+5. Define `RunOnce`, chapter, rarity, and hidden conditions in the event data.
+6. Do not modify player data directly inside event options.
 
-## 新增一个技能需要修改哪些地方
+## Adding a Skill
 
-1. 在 `SkillIds` 增加稳定 ID。
-2. 在 `SkillDatabase` 增加技能定义。
-3. 在 Localization 中增加技能名称和描述。
-4. 被动或战斗效果实现为 `IBattleEffect`。
-5. 主动、卡牌或展示型技能实现对应 UI 和触发入口。
-6. 通过 `TriggerTiming` 挂接，不要在战斗主流程里写特殊分支。
+1. Add a stable ID to `SkillIds`.
+2. Add the skill definition to `SkillDatabase`.
+3. Add localized skill names and descriptions.
+4. Implement passive or combat effects as `IBattleEffect`.
+5. Implement the appropriate UI and activation entry points for active, card-based, or display-only skills.
+6. Register effects through `TriggerTiming`; avoid special-case branches in the main combat flow.
 
-## 新增一个 Buff 需要修改哪些地方
+## Adding a Buff
 
-1. 在 `RunBuffIds` 或相关 Buff 定义处增加稳定 ID。
-2. 在 `RunBuffDatabase` 增加定义。
-3. 在 Localization 中增加名称、描述、Tooltip。
-4. 战斗中生效的 Buff 通过 `IBattleEffect` 或现有 RunBuff 管线接入。
-5. 明确生命周期：本场战斗、下一场战斗、整个 Run、永久数据。
+1. Add a stable ID to `RunBuffIds` or the relevant buff definition module.
+2. Add a definition to `RunBuffDatabase`.
+3. Add localized names, descriptions, and tooltips.
+4. Integrate combat buffs through `IBattleEffect` or the existing RunBuff pipeline.
+5. Define the lifetime explicitly: current battle, next battle, entire run, or persistent data.
 
-## 文档维护要求
+## Documentation Maintenance
 
-以后新增代码必须同步更新：
+When adding code, update the relevant documentation and metadata:
 
-- 文件头
-- XML Documentation
-- 模块 README
-- Localization Key
-- 架构说明或贡献规范中对应的规则
+- File headers.
+- XML documentation.
+- Module READMEs.
+- Localization keys.
+- Corresponding rules in the architecture or contribution guidelines.
 
-不要让 README 描述已经失效的系统流程。
+Keep this README aligned with the actual implementation; remove or revise descriptions of obsolete workflows.
