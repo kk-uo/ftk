@@ -1,0 +1,31 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# .NET build output
+**/bin/
+**/obj/
+.vs/
+
+# Local tooling, temporary files and OS metadata
+.DS_Store
+**/.DS_Store
+.claude/
+/tmp/
+*.log
+
+# Exported builds (keep source assets and export presets)
+/data_rouge3c_windows_x86_64/
+/ftk.exe
+/ftk.console.exe
+/ftk.pck
+/builds/
+/exports/
+
+# Local credentials
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.keystore

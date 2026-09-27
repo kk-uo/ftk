@@ -1,0 +1,34 @@
+//////////////////////////////////////////////////////////
+// 文件：Scripts/ILocalizedDefinition.cs
+//
+// 模块：Core System
+//
+// 职责：
+// 1. 承载核心数据结构、通用规则与跨模块协作相关代码。
+// 2. 为其它模块提供清晰、稳定的调用边界。
+// 3. 保持本文件内的状态变化可追踪、可调试。
+//
+// 不负责：
+// × 处理无关模块的业务规则。
+// × 绕过既有 Manager 或 Trigger 流程直接改写跨系统状态。
+// × 在数据定义层混入表现层细节。
+//
+// 主要依赖：
+// Godot / C# Runtime
+// 项目内对应 Manager、Database 与 Trigger 系统
+//////////////////////////////////////////////////////////
+
+// All Definition classes that carry localizable text must implement this interface.
+// UI systems must not read raw Name/Description fields directly — use Localization.GetName(def)
+// and Localization.GetDescription(def) instead.
+/// <summary>
+/// Core System 的公开接口：ILocalizedDefinition。
+///
+/// 用于表达该模块对外可见的核心概念，并保持具体实现与调用方解耦。
+/// </summary>
+public interface ILocalizedDefinition
+{
+    string Id { get; }
+    string NameKey { get; }
+    string DescriptionKey { get; }
+}

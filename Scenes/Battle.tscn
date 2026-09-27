@@ -1,0 +1,283 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://Scripts/BattleManager.cs" id="1_battle_manager"]
+[ext_resource type="Theme" path="res://Assets/UITheme.tres" id="2_ui_theme"]
+[ext_resource type="Texture2D" path="res://Assets/UI/BattleSkin/Frame/battle_frame_overlay.png" id="3_battle_skin"]
+[ext_resource type="Texture2D" path="res://Assets/UI/BattleSkin/Decoration/divider_tile.png" id="4_divider_tile"]
+[ext_resource type="Script" path="res://Scripts/Presentation/Presenters/SkillTriggerToastQueue.cs" id="5_skill_trigger_queue"]
+
+[node name="Battle" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture_filter = 1
+theme = ExtResource("2_ui_theme")
+script = ExtResource("1_battle_manager")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.005, 0.007, 0.01, 1)
+
+[node name="BattleUiSkin" type="NinePatchRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture_filter = 1
+texture = ExtResource("3_battle_skin")
+patch_margin_left = 180
+patch_margin_top = 160
+patch_margin_right = 180
+patch_margin_bottom = 160
+axis_stretch_horizontal = 2
+axis_stretch_vertical = 2
+draw_center = false
+
+[node name="MainMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 24
+
+[node name="RootLayout" type="VBoxContainer" parent="MainMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TopBar" type="PanelContainer" parent="MainMargin/RootLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 64)
+
+[node name="TopBarRow" type="HBoxContainer" parent="MainMargin/RootLayout/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="TurnLabel" type="Label" parent="MainMargin/RootLayout/TopBar/TopBarRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 2
+text = "第 1 回合"
+vertical_alignment = 1
+
+[node name="ActionLabel" type="Label" parent="MainMargin/RootLayout/TopBar/TopBarRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "回合前：触发回合前效果。"
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="SkillDebugButton" type="Button" parent="MainMargin/RootLayout/TopBar/TopBarRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(130, 42)
+text = "技能调试"
+
+[node name="BattleLogButton" type="Button" parent="MainMargin/RootLayout/TopBar/TopBarRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(130, 42)
+text = "战斗日志"
+
+[node name="RestartButton" type="Button" parent="MainMargin/RootLayout/TopBar/TopBarRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(130, 42)
+text = "重新开始"
+
+[node name="Battlefield" type="PanelContainer" parent="MainMargin/RootLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 780)
+
+[node name="BattlefieldOverlay" type="Control" parent="MainMargin/RootLayout/Battlefield"]
+layout_mode = 2
+
+[node name="BattleStage" type="PanelContainer" parent="MainMargin/RootLayout/Battlefield/BattlefieldOverlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 0
+
+[node name="BattleStageLayer" type="Control" parent="MainMargin/RootLayout/Battlefield/BattlefieldOverlay/BattleStage"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="StatusPanel" type="PanelContainer" parent="MainMargin/RootLayout/Battlefield/BattlefieldOverlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 16.0
+offset_left = 16.0
+offset_right = -16.0
+offset_bottom = 236.0
+grow_horizontal = 2
+z_index = 50
+
+[node name="StatusColumn" type="VBoxContainer" parent="MainMargin/RootLayout/Battlefield/BattlefieldOverlay/StatusPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="EnemyContainer" type="HBoxContainer" parent="MainMargin/RootLayout/Battlefield/BattlefieldOverlay/StatusPanel/StatusColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="TurnCounterPanel" type="VBoxContainer" parent="MainMargin/RootLayout/Battlefield/BattlefieldOverlay"]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 16.0
+offset_top = 250.0
+offset_right = 296.0
+offset_bottom = 720.0
+z_index = 45
+theme_override_constants/separation = 10
+alignment = 0
+
+[node name="TurnCounterLabel" type="Label" parent="MainMargin/RootLayout/Battlefield/BattlefieldOverlay/TurnCounterPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RecentReportLabel" type="RichTextLabel" parent="MainMargin/RootLayout/Battlefield/BattlefieldOverlay/TurnCounterPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(280, 360)
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "[center][font_size=18][color=#b9c0cc]最近战报[/color][/font_size][/center]"
+fit_content = false
+scroll_active = true
+autowrap_mode = 3
+
+[node name="ActionPanel" type="PanelContainer" parent="MainMargin/RootLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 260)
+
+[node name="ActionOverlay" type="Control" parent="MainMargin/RootLayout/ActionPanel"]
+layout_mode = 2
+
+[node name="ActionDivider" type="TextureRect" parent="MainMargin/RootLayout/ActionPanel/ActionOverlay"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 20.0
+grow_horizontal = 2
+mouse_filter = 2
+texture_filter = 1
+texture_repeat = 2
+texture = ExtResource("4_divider_tile")
+stretch_mode = 1
+
+[node name="ActionCenter" type="CenterContainer" parent="MainMargin/RootLayout/ActionPanel/ActionOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -390.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ActionColumn" type="VBoxContainer" parent="MainMargin/RootLayout/ActionPanel/ActionOverlay/ActionCenter"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PlayerActionDisplayLabel" type="Label" parent="MainMargin/RootLayout/ActionPanel/ActionOverlay/ActionCenter/ActionColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "当前出牌：等待选择"
+horizontal_alignment = 1
+
+[node name="ActionArea" type="HBoxContainer" parent="MainMargin/RootLayout/ActionPanel/ActionOverlay/ActionCenter/ActionColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="PlayerStatusLayer" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="PlayerStatusViewportRoot" type="Control" parent="PlayerStatusLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PlayerStatusAnchor" type="Control" parent="PlayerStatusLayer/PlayerStatusViewportRoot"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -217.0
+offset_right = -48.0
+offset_bottom = -32.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+clip_contents = false
+
+[node name="FriendlyPanel" type="PanelContainer" parent="PlayerStatusLayer/PlayerStatusViewportRoot/PlayerStatusAnchor"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 1
+grow_vertical = 1
+custom_minimum_size = Vector2(372, 185)
+
+[node name="FriendlyContainer" type="HBoxContainer" parent="PlayerStatusLayer/PlayerStatusViewportRoot/PlayerStatusAnchor/FriendlyPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 18
+alignment = 2
+
+[node name="SkillTriggerPresentationLayer" type="CanvasLayer" parent="."]
+layer = 40
+
+[node name="SkillTriggerToastQueue" type="Control" parent="SkillTriggerPresentationLayer"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_skill_trigger_queue")

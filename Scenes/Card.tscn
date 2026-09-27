@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/CardUI.cs" id="1_card_ui"]
+
+[node name="Card" type="PanelContainer"]
+custom_minimum_size = Vector2(135, 246)
+script = ExtResource("1_card_ui")
