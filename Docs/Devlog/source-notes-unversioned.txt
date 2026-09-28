@@ -1,0 +1,248 @@
+- Reworked the battle log for clearer round-by-round settlement, detailed combat records, skill records, and system debugging information.
+- Fixed Kill vs. Celestial Impact interactions so they follow the intended counter-resolution rules.
+- Fixed Fire-Thunder Kill counter relationships:
+  - It counters Fire Kill and Thunder Kill.
+  - It no longer receives damage from the Fire Kill / Kill / Thunder Kill interactions it should counter.
+  - Its interactions with Arrow Barrage and Sure Kill now apply the intended mutual damage values.
+- Fixed the damage system so card tooltips display final damage, including character skills, equipment bonuses, buffs, multipliers, and damage-type effects.
+- Removed uncertain ? damage display from cards.
+- Fixed inflated damage numbers when enemies die; execution damage now uses the target’s actual remaining HP instead of producing excessive values.
+- Added damage-type separation and elemental damage distinctions.
+- Added a visible floating Block combat text effect when damage is prevented.
+- Added a red screen-flash effect when the player takes damage.
+- Added an Arrow Barrage attack effect.
+- Fixed Steal so it is treated as a trick/resource action rather than an attack:
+  - It no longer deals damage incorrectly.
+  - It follows the correct cost and settlement rules.
+- Set Steal’s cost to 1 Mana.
+- Fixed Unassailable so it can properly respond to Shadow Kill.
+- Fixed Nanman Invasion interactions with Sure Kill, Shadow Kill, and Longdan.
+- Fixed targeted Thunder Kill so its damage is applied to the selected enemy instead of being incorrectly split across targets.
+- Removed unnecessary action-bar progress bars when playing Fee or Dodge.
+- Moved all combat countdown/progress UI to the centered area above the action bar.
+- Standardized all shield rules:
+  - Wine, Peach, Charm, and Benevolence can create shields.
+  - Each shield layer blocks one full damage instance.
+  - The highest incoming damage is blocked first.
+  - Shields expire at the end of the turn.
+  - Multiple Wine/Peach cards create multiple shield layers.
+  - Peach/Wine effects are consumed correctly as shields are lost.
+  - Benevolence retains its two-layer shield behavior.
+  - Charm remains effective after its shield is consumed where intended.
+- Fixed Peach shield behavior for multiple Peach cards and multiple incoming attacks.
+- Fixed Peach so its shield is active only during the turn it is played.
+- Fixed Hua Tuo’s Peach behavior so it can correctly count as a Dodge response where intended.
+- Fixed Ice Armor so it cannot gain Mana from Fee.
+- Added and normalized buff/status display behavior.
+- Added and repaired Zhang Liao’s Raid / Tuxi behavior:
+  - It resolves against all valid enemies.
+  - It applies its Nanman-style damage rules per target.
+  - It triggers Steal only after actual successful damage.
+- Improved AI behavior for Unassailable: the AI may occasionally use it in consecutive rounds, but does not loop it excessively.
+- Fixed Zhou Tai’s Fenjī so it can trigger whenever HP reaches 0 or below as intended.
+- Fixed Sun Ce’s Soul Pose:
+  - It can trigger repeatedly.
+  - It remains available until maximum HP reaches 10 or below.
+  - Maximum HP updates correctly in real time.
+- Fixed Sun Ce skill damage/preview display.
+- Fixed Xu Sheng’s Po Jun display and settlement behavior.
+- Fixed Zhen Ji’s Mana and Luo Shen behavior:
+  - If Fee was not used, next-round Mana is halved correctly.
+  - The wording now correctly states that current Mana is halved.
+- Improved Diao Chan’s skill behavior.
+- Improved Ma Chao’s skill description.
+- Fixed Huang Yueying’s Shadow Strike / Yingxi:
+  - Shadow State grants invulnerability immediately on the activation turn.
+  - Shadow State prevents Steal where intended.
+  - Shadow Kill no longer creates an unnecessary progress bar.
+  - Shadow Kill updates its cost correctly after being blocked.
+  - Ru Ying Sui Xing behavior was repaired.
+- Added Ice Kill to the action bar for characters with the Extreme Cold skill.
+- Fixed Meng Huo’s exclusive Barbarian Camp event option.
+- Added Meng Huo’s unlock requirement: defeat an Exiled Barbarian once.
+- Added character unlock conditions for boss and enemy achievements.
+- Removed Zuo Ci and Jia Xu from the normal character-selection roster.
+- Restored the correct “Zuo · Ci” display name.
+- Debug mode now allows all heroes to be played without unlock requirements.
+- Added Chapter 4 and its Abyss route.
+- Added the Chapter 4-8 Legendary Boss: Phantom Tentacle / Illusion Tentacle.
+  - 2000 HP.
+  - Illusion and Slime skills.
+  - Defensive AI before being hit, offensive AI after being hit, then returns to defense after landing an attack.
+  - Does not use a shared HP pool.
+  - Uses Attack Chip*5.
+- Added and improved AI for:
+  - Wulong Collective Intelligence.
+  - Collective Intelligence.
+  - Wine Drinker.
+  - Exiled Barbarian.
+  - Hunter.
+  - Zuo Ci.
+  - Shixin Zhe.
+  - General enemy AI behavior.
+- Fixed AI selecting cards that are not currently available in its action bar.
+- Fixed AI behavior after Guanxing:
+  - Enemies save Mana before Guanxing.
+  - They repeat the selected Guanxing card afterward.
+  - They cannot use Guanxing again for the following three rounds.
+- Fixed frozen enemies so they cannot improperly use non-Fee actions.
+- Improved the Giant Pus Sac AI, which previously tended to use only Fee.
+- Added Cyclops to the Chapter 2 elite pool and validated its skill behavior.
+- Fixed Chapter 2 Sewer Stage 2-3 enemy formations:
+  - Two Giant Mechanical Rats.
+  - Two Giant Cockroaches.
+  - Three Giant Pus Sacs.
+- Removed incorrect Chapter 1 and Chapter 2 enemy leftovers from Chapter 3.
+- Removed Giant Cockroach spawns from the Chapter 2 city route; they now remain on the Sewer route.
+- Fixed the Chapter 1-8 boss composition and adjusted the Traitor encounter.
+- Nerfed the Traitor, including HP and encounter composition adjustments.
+- Nerfed the Abandoned Servant’s starting Mana from 2 to 1.
+- Reduced the Exiled Barbarian’s HP from 120 to 100.
+- Adjusted the Tyrant Boss HP from 1300 to 1100.
+- Fixed Dong Zhuo’s Benghuai skill and its round-zero HP-loss behavior.
+- Limited Dong Zhuo’s zero-Mana Wine usage to two bottles.
+- Improved the Tyrant Boss, Moon encounter, Chapter 3 elites, and other high-pressure boss encounters.
+- Strengthened selected enemies, including Left Ci and Shixin Zhe.
+- Weakened the Pan Flute and adjusted Conductor from lightning immunity to 75% lightning-damage reduction.
+- Fixed Scale Armor, including special shared-HP enemy handling.
+- Fixed Feather Guard and other enemies incorrectly using Wine revival.
+- Added equipment icons for all current equipment, limited to 64×64 pixels.
+- Added equipment art support to the inventory and main UI; equipment can now show icons instead of only names.
+- Added hover tooltips for equipment names and details.
+- Reworked duplicate enemy-equipment display:
+  - Repeated equipment is combined into one line.
+  - Example: Attack Chip*5.
+- Attack Chips now apply directly to stats instead of remaining as meaningless inventory entries.
+- Fixed boss equipment rewards not being granted.
+- Improved boss reward flow.
+- Added guaranteed Chapter 1 boss equipment choices.
+- Added guaranteed Chapter 1 defensive-chip rewards and Chapter 2 capacity-chip rewards.
+- Added guaranteed Chapter 2 boss Capacity Chip rewards.
+- Fixed Expansion Chip reward behavior.
+- Fixed incorrect legendary equipment selection pools.
+- Unified reforging logic:
+  - All non-story-exclusive equipment can enter the reforge pool.
+  - Reforge interfaces now follow the same candidate-selection rules.
+- Updated special legendary-choice restrictions for items such as Capacity Chip, Mystic Chip, and Tyrant Crown where appropriate.
+- Fixed duplicate-owned equipment appearing in random selection pools, while allowing scripted event rewards to still grant intended equipment.
+- Added direct selling from the inventory equipment area.
+- Improved inventory equipment swapping and drag/drop behavior.
+- Improved weapon-choice UI and reduced excessive blank space.
+- Added a 50-gold shop refresh option.
+- Shop refresh can only be used once; it becomes disabled afterward.
+- Shop rarity now scales with chapter progression.
+- Fixed shops not showing Legendary equipment correctly.
+- Adjusted shop inventory so Legendary items are not sold where they should be reward-only.
+- Optimized purchasing and shop flow.
+- Adjusted War Drum rarity.
+- Reworked Chitu, Hook Chain, Forgotten Stone, Statue Core, Mystic Reagent, and other equipment balance.
+- Fixed Speculator’s Blade gold rewards, including cases where ten Kill cards are played within a single turn.
+- Performed a review of all gold-related equipment behavior.
+- Added the Abandoned Laboratory Chapter 1 immediate-reward event and extra options.
+- Improved the Accidental Short Circuit event.
+- Fixed the Old Shadows third option so it actually grants HP.
+- Fixed Old Shadows and shop-event descriptions that still showed outdated thresholds or code-like text.
+- Fixed the Chibi Ruins option so it removes 10 current HP rather than 10 maximum HP.
+- Fixed the Changban Slope equipment option that incorrectly rewarded Paralysis Device.
+- Fixed the Barbarian Camp event so granted cards are added to the proper card/action pool.
+- Audited initial-event rewards and repaired cases where options failed to grant their promised rewards.
+- Fixed the initial event that grants a defeated Chapter 1 boss skill.
+- Added the initial event where the first enemy becomes an Elite and the 1-2 event is replaced with a Chapter 2 event.
+- Fixed the Chapter 2 event replacement so it no longer incorrectly selects Chapter 1 events.
+- Updated Initial Event option 6 to grant a choice of one Rare equipment plus 25 Gold.
+- Verified the flawless-first-three-battles condition for Epic equipment rewards.
+- Fixed the initial Fire Kill / Thunder Kill replacement event so Fire-Thunder Kill appears in the action bar.
+- Added the initial event that grants one random defeated-boss skill and increases Legendary enemy HP by 30%.
+- Rebalanced event weights globally.
+- Hid special-character event conditions when the player cannot access them.
+- Added event conditions to disabled/unavailable choices instead of hiding their reason.
+- Prevented Tavern events from appearing in Chapter 1.
+- Fixed faction/chapter mutation buffs:
+  - Chapter 1 mutation buffs no longer incorrectly persist into Chapter 2.
+  - Curses now decay by their stack count instead of being cleared incorrectly.
+  - Blood Red Night darkness no longer persists incorrectly into Chapter 2.
+- Added persistent out-of-battle buff support for chapter variants and multi-battle effects.
+- Added a faction-effect reveal sequence at battle start, including a roulette-style presentation and detailed effect display.
+- Fixed Han Imperial Shrine ancestor blessings being applied to the enemy side.
+- Added Chapter 2 Sewer → Chapter 3 Palace progression.
+- Fixed battle victory progression:
+  - Returning from Stage 1 now progresses to the next event/route correctly.
+  - Repeating a completed battle no longer returns the player to the main menu.
+  - Resource/Forage costs are no longer deducted incorrectly.
+- Renamed map stages to clear English names such as Stage 1, replacing BattleStage labels.
+- Fixed map return positions so leaving an event returns the player to the node where it was entered.
+- Added map movement with WASD and hero-specific map avatars.
+- Added map node visual interfaces for unique event and stage icons.
+- Added map debug tools:
+  - Jump to a chapter.
+  - Advance to the next chapter.
+  - Trigger chapter variants directly.
+- Fixed clicking a stage causing crashes.
+- Fixed extra-event generation so one reward batch cannot contain two Shop options.
+- Updated Wei’s Dual-Front Campaign extra Boss cost from 20 Energy to 10 Energy.
+- Added post-battle HP retention:
+  - HP carries between battles.
+  - The next battle restores only 10 HP.
+  - Boss-to-next-chapter transitions restore HP correctly.
+  - Wine revival availability resets correctly between battles.
+- Reworked enemy battle presentation:
+  - Enemy action labels now match the correct enemy.
+  - Fixed swapped left/middle/right enemy actions in two- and three-enemy fights.
+  - Fixed wrong target-selection display.
+  - Added selected-target HP-bar highlighting.
+  - Improved enemy vertical layout and stabilized enemy UI size.
+  - Long status text is now constrained or truncated instead of constantly shifting UI.
+- Fixed the bottom-right player UI anchoring issue.
+- Fixed player UI offsets when card quantities change.
+- Added richer hover UI:
+  - Hovering enemy battlefield UI shows detailed enemy information.
+  - Right-side enemy detail panels remain open while hovered.
+  - Wider enemy info panels prevent clipped descriptions.
+  - Long equipment and skill descriptions are handled correctly.
+  - Tooltips disappear immediately after leaving the UI.
+- Fixed Chapter 2 and Chapter 3 enemy hover panels that previously displayed no information.
+- Moved Boss UI away from the incorrect top-left position.
+- Added keyboard shortcuts:
+  - A / D switch targets.
+  - 1–6 play action cards quickly.
+- Improved UI keyboard handling.
+- Added a Main Menu return button to character selection.
+- Added a Quit to Desktop button to the main menu.
+- Added access to the four upper-right battle buttons after battle completion, including battle-log access.
+- Improved battle-end and debug-game-over access to logs.
+- Improved the Debug panel:
+  - Merged battle skill debugging into the general debug interface.
+  - Added equipment acquisition tools.
+  - Added player invincibility.
+  - Added HP debugging.
+  - Added scroll support for the oversized skill-debug list.
+  - Fixed the Debug interface return-to-menu issue.
+- Improved Character Select UI, Fate Beginning UI, weapon-selection UI, tutorial-selection UI, and initial-event layout.
+- Fixed English card titles overflowing their card frames.
+- Fixed the inventory screen’s English localization.
+- Expanded initial-event choice UI so all text can be read.
+- Added Codex improvements, optimized entries, corrected enemy stage labels, and reserved art slots.
+- Checked Codex and Codex/Claude development data separation.
+- Added a complete beginner tutorial flow.
+- Set tutorial player Mana to 999.
+- Set tutorial enemy HP to 100.
+- Improved tutorial AI behavior, including the third-step Kill interaction.
+- Reworked tutorial overlays to prevent UI obstruction.
+- Added a first-launch recommendation that directs new players to the tutorial.
+- Localized tutorial and unlock-condition text.
+- Performed a broad hard-coded localization audit, especially for buttons, Codex pages, unlock requirements, tooltips, combat effects, and enemy panels.
+- Set English as the default language.
+- Fixed Chinese text remaining in English-mode Block and Mana-gain effects.
+- Standardized stack formatting across the game, such as Curse*3 and Attack Chip*5.
+- Added AI-generated battle portraits for Chapter 1–3 Bosses, Elites, normal enemies, and side-route enemies.
+- Preserved original pixel-art assets for Feather Guard, Scavenger, Exiled Barbarian, Abandoned Servant, and Gate Guard.
+- Added and implemented the Phantom Tentacle battle portrait.
+- Reworked the Phantom Tentacle portrait:
+  - Transparent RGBA background.
+  - Compact 128×180 runtime asset.
+  - Reduced battlefield scale to avoid UI obstruction.
+- Fixed missing map images and enemy images.
+- Audited image-resource dependencies:
+  - Runtime image loading uses project-local res://Assets/... paths.
+  - No runtime asset depends on a local desktop path, temporary generation directory, or remote URL.
+  - The project can be exported and uploaded with all required image assets included.
