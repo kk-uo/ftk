@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="Assets/Backgrounds/MainMenu/main_menu_clean_plate.png" alt="Forgotten Three Kingdoms — a ruined cyberpunk Three Kingdoms city beneath a crimson moon" width="100%" />
-</p>
-
 <h1 align="center">Forgotten Three Kingdoms</h1>
 
 <p align="center">
@@ -27,16 +23,15 @@
 ## Gameplay showcase
 
 <p align="center">
-  <img src="Docs/Images/character-selection.png" alt="Runtime character-selection screen with faction-colored hero data chips" width="49%" />
-  <img src="Docs/Images/initial-fate.png" alt="Runtime initial-fate event screen with three selectable choices" width="49%" />
+  <img src="Docs/Images/combat-system.png" alt="English-language runtime battle screen showing a Gate Guard enemy and the fixed action-card bar" width="49%" />
+  <img src="Docs/Images/character-selection.png" alt="English-language runtime character-selection screen with faction-colored hero data chips" width="49%" />
 </p>
 
 <p align="center">
-  <img src="Assets/Backgrounds/Map/bg_map_chapter2_city.png" alt="Chapter 2 ruined cyberpunk city map artwork" width="49%" />
-  <img src="Assets/Backgrounds/Events/initial_fate_junkyard.png" alt="Initial-fate junkyard event background artwork" width="49%" />
+  <img src="Docs/Images/initial-fate.png" alt="English-language runtime initial-event screen with three selectable fate choices" width="74%" />
 </p>
 
-The first row contains direct runtime captures from the project’s Godot regression scenes; the second shows production map and event art used by the game. These visuals support a dark pixel-art / cyberpunk Three Kingdoms setting across hero selection, branching progression, and events. See [image provenance](Docs/Images/README.md) and [menu-art implementation notes](Assets/Backgrounds/MainMenu/README.md).
+Every image above is an unretouched **English-language capture of a real Godot runtime screen**: the standard battle scene, hero selection, and the initial-event flow. No standalone background or concept art is used as a gameplay showcase. See [image provenance](Docs/Images/README.md).
 
 ## About the game
 

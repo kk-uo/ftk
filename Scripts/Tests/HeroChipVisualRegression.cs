@@ -9,6 +9,7 @@ public partial class HeroChipVisualRegression : Node
         try
         {
             Localization.Initialize();
+            Localization.SetLanguage("en_US");
             var select = new CharacterSelectController();
             AddChild(select);
             select.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
@@ -28,7 +29,7 @@ public partial class HeroChipVisualRegression : Node
             {
                 await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
                 using var image = GetViewport().GetTexture().GetImage();
-                image.SavePng("/tmp/ftk-chips-preview.png");
+                image.SavePng(ProjectSettings.GlobalizePath("res://Docs/Images/character-selection.png"));
             }
             GD.Print($"HERO_CHIPS_PASS count={chips.Length} unlocked={chips.Count(c=>c.Unlocked)}");
             GetTree().Quit();
