@@ -6,6 +6,7 @@ These notes preserve author-provided development history. They are not automatic
 
 | Record | Scope | Provenance |
 | --- | --- | --- |
+| [v0.4.0 Development Update](update-0.4.0.md) | Combat, boss/AI tuning, equipment, events, UI, resume flow, and Chapter 4 pixel-art portraits | Curated from the author's current update notes and the implemented project changes. [itch.io-ready version](itchio-v0.4.0.md). |
 | [Update 2.0](update-2.0.md) | Effect presets, visual integration, map exploration, hero unlocks, Zhao Yun, Longdan | Version label and bullet list supplied by the author; date not supplied. |
 | [Unversioned update notes](unversioned-updates.md) | Combat, enemies, progression, equipment, events, UI, localization, art | Separate author-provided attachment; version/date not supplied. [Verbatim source](source-notes-unversioned.txt). |
 

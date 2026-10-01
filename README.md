@@ -82,6 +82,7 @@ Development includes AI-assisted coding and AI-generated visual assets. The repo
 
 | Milestone | Portfolio-relevant progress |
 | --- | --- |
+| **v0.4.0 — combat, progression, and presentation pass** | Refined additive-then-multiplicative damage settlement, boss/AI behavior, equipment and event rewards, resume flow, menu/hero-selection UX, shop tooltips and chip choices, and Chapter 4 Cthulhu cyberpunk pixel-art portraits. [Read the update](Docs/Devlog/update-0.4.0.md). |
 | **Visual foundations & character progression — “Update 2.0”** | Added effect presets, weapon/attack visual integration, map backgrounds, Zhao Yun portrait/full-body art, initial-event art, hero unlocks, and a Longdan reaction fix. [Read the update](Docs/Devlog/update-2.0.md). |
 | **Combat and content iteration** | Expanded matchup rules, shields, elemental damage, enemy behavior, chapter content, equipment, events, rewards, UI, and localization. [Read the curated historical notes](Docs/Devlog/unversioned-updates.md). |
 | **Current portfolio pass** | Consolidated the project into a recruiter-facing repository with source-linked engineering explanations, runtime UI captures, and focused regression evidence. [Browse all development records](Docs/Devlog/README.md). |
