@@ -7,6 +7,7 @@ This update is a major combat, progression, UI, and presentation pass for **Forg
 - Damage now resolves in the correct order: flat bonuses first, then multipliers.
 - Attack attributes and damage-source information are clearer across combat and battle logs.
 - Skill selections can now include character skills, with activation text and portrait feedback during battle.
+- Fire Attack can now be played repeatedly within the action stack, and the Liu Bei/Guan Yu/Zhang Fei shared-health encounter now exposes the correct number of selectable targets.
 - Peach and Wine rescue now wait for passive survival skills such as Unyielding, Nirvana, and Drumbeat to resolve first.
 - Fixed multiple skill and status issues, including fixed-HP effects, Po Jun, Beng Huai, Charm shields, Time Hourglass, and Curse/Evil Aura behavior.
 - Added equipment-trigger messages to battle logs and refreshed damage-preview typography.

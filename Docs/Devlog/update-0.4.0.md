@@ -7,6 +7,7 @@ This update is a broad iteration pass across combat rules, bosses, equipment, ev
 - Corrected the damage pipeline so additive modifiers resolve before multipliers.
 - Standardized attack attributes and improved damage-source reporting in battle logs.
 - Reworked the card/skill choice pool so character skills can enter skill selections.
+- Enabled repeated Fire Attack plays within the action stack and corrected the Liu Bei/Guan Yu/Zhang Fei shared-health encounter's selectable-target count.
 - Added skill-trigger feedback: a skill name and the owner's portrait now appear when a skill activates.
 - Updated Peach/Wine rescue priority: passive survival effects such as **Unyielding**, **Nirvana**, and **Drumbeat** resolve before Peach/Wine rescue is considered.
 - Fixed a number of trigger and state issues, including fixed-HP effects, **Po Jun**, **Beng Huai**, Charm shields, Time Hourglass, and the curse-to-evil-aura interaction.
