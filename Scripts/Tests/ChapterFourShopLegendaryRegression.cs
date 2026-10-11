@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-/// <summary>验证第四章普通商店的传奇栏位资格与独立10%配置。</summary>
+/// <summary>验证难度5章节商店的传奇栏位资格与第四章10%配置。</summary>
 public partial class ChapterFourShopLegendaryRegression : Node
 {
     private int _assertions;
@@ -11,16 +11,22 @@ public partial class ChapterFourShopLegendaryRegression : Node
         try
         {
             Localization.Initialize();
+            DifficultyManager.ResetForTest();
             GameManager.BeginNewRun();
+            Assert(DifficultyManager.TrySelect(DifficultyLevel.Difficulty5), "测试无法选择难度5");
             GameManager.SelectCharacter(CharacterIds.ZhaoYun);
             InventoryManager.Reset();
 
             var legendary = EquipmentDatabase.GetEquipment(EquipmentIds.XianHao)
                 ?? throw new InvalidOperationException("测试前提失败：找不到仙毫");
 
+            GameManager.DebugGoToChapter(1);
+            ShopManager.GenerateSlots(ShopType.Normal);
+            Assert(!ShopManager.CanAppearInShop(legendary), "第一章普通商店错误放行传奇装备");
+
             GameManager.DebugGoToChapter(3);
             ShopManager.GenerateSlots(ShopType.Normal);
-            Assert(!ShopManager.CanAppearInShop(legendary), "第三章普通商店错误放行传奇装备");
+            Assert(ShopManager.CanAppearInShop(legendary), "难度5第三章普通商店没有放行传奇装备");
 
             GameManager.DebugGoToChapter(4);
             ShopManager.GenerateSlots(ShopType.Normal);

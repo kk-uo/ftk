@@ -49,7 +49,7 @@ public static class GameManager
     public const int InitialForage = 2;
     public const int InitialGold = 50;
     // 电量（Power）：地图探索资源，每章开始时重置为满，只影响地图节点进入
-    // （战斗内不消耗/恢复，Boss节点不消耗）。
+    // （战斗内不消耗/恢复，Boss节点不消耗）。默认100，难度4起由难度规则降为80。
     public const int InitialMaxPower = 100;
     public const int EnemyInitialHealth = 40;
     public const int InitialMana = BattleConstants.InitialMana;
@@ -127,6 +127,9 @@ public static class GameManager
     private static readonly HashSet<string> SeenEventsByChapter = new();
     private static ChapterRoute _chapterRoute = ChapterRoute.Default;
     private static ChapterVariant _chapterVariant = ChapterVariant.None;
+    // 降雨是整局独立判定的全局天气，可以与第一章的诅咒之夜/血红之月同时存在，
+    // 因此不能继续塞进单值 ChapterVariant 里互斥保存。
+    private static bool _globalRainActive;
     private static bool _curseBladeCurrentCurseAmplified;
     private static bool _hasFreeWineRevive; // 酒馆·点杯酒：濒死自动饮酒时费用变为0（原为1费），本局永久生效
     // ————————————————————————————————————————
@@ -170,6 +173,7 @@ public static class GameManager
     private static bool _initialEventUpgradeFirstEquipTriggered; // ⑱：本Run是否已经成功替换过一次
     private static bool _initialEventFortuneContractPending;  // ㉑财富契约：三件专属装备三选一待领取
     private static bool _initialEventAttackTrickChoicePending; // ㉒：特殊锦囊三选一待领取
+    private static bool _difficultySixChapterThreeSkillChoiceConsumed;
 
     public static string CurrentCharacterId { get; private set; } = string.Empty;
     public static int CurrentChapter { get; private set; } = 1;
@@ -181,7 +185,7 @@ public static class GameManager
     // 电量上限 = 基础值100 + 初始事件永久加成（如【最大电量+25】）+ 载具等装备加成
     // （框架预留，目前没有任何装备提供加成）。三者都是"本局永久"的，不随章节切换重置——
     // 每章开始只是把 Power 重新填满到这个（可能已提高的）上限，上限本身不会掉回100。
-    public static int MaxPower => InitialMaxPower + _initialEventMaxPowerBonus + _maxPowerBonus + GetVehiclePowerBonus() + _factionFateMaxPowerBonus;
+    public static int MaxPower => DifficultyManager.InitialPower + _initialEventMaxPowerBonus + _maxPowerBonus + GetVehiclePowerBonus() + _factionFateMaxPowerBonus;
     // 上一次进入节点前的电量快照，供地图HUD返回地图屏幕时对比、播放电量增/减脉冲动画
     // （地图屏幕本身展示期间电量不会变化，只能靠前后对比触发）。
     public static int PowerBeforeLastNode { get; set; }
@@ -201,6 +205,7 @@ public static class GameManager
     public static bool DebugMapEnabled { get; private set; }
     public static ChapterRoute CurrentChapterRoute => _chapterRoute;
     public static ChapterVariant CurrentChapterVariant => _chapterVariant;
+    public static bool GlobalRainActive => _globalRainActive;
 
     // 芯片计数（背包界面实时读取）。
     public static int DefenseChipCount => _defenseChipCount;
@@ -503,6 +508,23 @@ public static class GameManager
     public static void AddInitialEventExtraShopRefresh() => _initialEventExtraShopRefreshCount++;
 
     /// <summary>
+    /// 难度6第三章主Boss战前的稀有技能三选一只允许触发一次。
+    /// 在弹出选择界面前立即消费，避免界面重建或重复点击Boss节点造成重复领取。
+    /// </summary>
+    public static bool TryConsumeDifficultySixChapterThreeSkillChoice()
+    {
+        if (!DifficultyManager.ChapterThreeRareSkillChoiceEnabled
+            || CurrentChapter != 3
+            || _difficultySixChapterThreeSkillChoiceConsumed)
+        {
+            return false;
+        }
+
+        _difficultySixChapterThreeSkillChoiceConsumed = true;
+        return true;
+    }
+
+    /// <summary>
     /// 战场崩坏胜利（含互伤胜利）专用：传入战斗结束瞬间玩家生命。
     /// 下一次 RecoverHealthAfterBattle() 使用该值且最低保留1HP，不叠加正常回复。
     /// </summary>
@@ -663,7 +685,7 @@ public static class GameManager
     public static IReadOnlyList<RunBuff> ActiveRunBuffs => RunBuffManager.ActiveBuffs;
     public static IReadOnlyList<MapNode> Nodes => MapNodes;
     public static int ClearedBattleCount => ClearedStages.Count;
-    public static bool IsFinalChapter => CurrentChapter >= TotalChapters;
+    public static bool IsFinalChapter => CurrentChapter >= DifficultyManager.FinalChapter;
     public static bool HasActiveSpecialBattle => !string.IsNullOrEmpty(_activeSpecialBattleId);
     public static string ActiveSpecialBattleId => _activeSpecialBattleId;
     public static double ActiveSpecialBattleEnemyMaxHpMultiplier => _activeSpecialBattleEnemyMaxHpMultiplier;
@@ -727,7 +749,7 @@ public static class GameManager
             }
         }
 
-        return "未知统治者";
+        return Localization.Get("chapter.boss.unknown");
     }
 
     /// <summary>
@@ -849,6 +871,7 @@ public static class GameManager
     /// </summary>
     public static void BeginNewRun()
     {
+        DifficultyManager.ResetCurrentRun();
         ResetRunData();
         CurrentRunState = RunState.CharacterSelect;
     }
@@ -862,11 +885,16 @@ public static class GameManager
     {
         ResetRunData();
         CurrentCharacterId = characterId;
+        var isIntegratedTutorial = IntegratedTutorialFlow.IsActive;
         // 图鉴：角色选择才是"一次Run真正开始"的判定点（角色选择界面本身被返回不算），
         // CurrentRunId 用于装备"完成过的Run数量"去重统计，必须在下面的初始装备发放之前递增。
-        CodexService.CurrentRunId++;
-        CodexService.RecordCharacterRunStart(characterId);
-        CodexService.RecordCharacterChapterReached(characterId, 1);
+        // 整合式教程只是独立的演示流程，不能计入正式 Run、角色进度或图鉴统计。
+        if (!isIntegratedTutorial)
+        {
+            CodexService.CurrentRunId++;
+            CodexService.RecordCharacterRunStart(characterId);
+            CodexService.RecordCharacterChapterReached(characterId, 1);
+        }
         MaxHP = CurrentCharacter?.MaxHp ?? BattleConstants.InitialHealth;
         CurrentHP = MaxHP;
         CurrentMana = InitialMana;
@@ -875,8 +903,17 @@ public static class GameManager
             foreach (var equipId in CurrentCharacter.StartingEquipmentIds)
                 AddEquipment(equipId, EquipmentGainSource.CharacterStartingEquipment);
         }
+        // 教程绝不能混入正式章节的随机内容：不掷章节变种、不抽阵营命运/骰子、
+        // 不追加命运 Boss，且地图仅使用两个明确的教学节点。
+        if (isIntegratedTutorial)
+        {
+            BuildTutorialMap();
+            CurrentRunState = RunState.Map;
+            return;
+        }
+
         BuildDefaultMap();
-        RollChapterVariant();
+        RollDifficultyModifiersForNewRun();
         // 阵营命运：按当前角色阵营在新 Run 一次性随机；第1章天命骰也从这里判定。必须放在
         // 角色/地图数据都已就绪之后，因为随机与判定过程可能读取 CurrentCharacter/AddGold/AddEquipment。
         FactionFateManager.RollFateIfEligible();
@@ -888,17 +925,23 @@ public static class GameManager
     }
 
     /// <summary>
-    /// Rolls the persistent weather/event modifier for the chapter being entered.
-    /// Each listed variant has an independent 10% slice; rain is therefore a 10% chance.
+    /// 难度1及以上的新局修正：第一章在诅咒之夜/血红之月之间进行互斥判定，
+    /// 降雨另行独立判定，因此可以与其中一个第一章变种同时存在并持续整个Run。
     /// </summary>
-    private static void RollChapterVariant()
+    private static void RollDifficultyModifiersForNewRun()
     {
-        var roll = Random.Shared.NextDouble();
-        _chapterVariant = roll switch
+        _chapterVariant = ChapterVariant.None;
+        _globalRainActive = false;
+        if (!DifficultyManager.ChapterVariantsEnabled)
         {
-            < 0.10 => ChapterVariant.BloodMoon,
-            < 0.20 => ChapterVariant.CurseNight,
-            < 0.30 => ChapterVariant.Rainstorm, // 10%: [20%, 30%)
+            return;
+        }
+
+        var chapterOneRoll = Random.Shared.NextDouble();
+        _chapterVariant = chapterOneRoll switch
+        {
+            < 0.10 => ChapterVariant.CurseNight,
+            < 0.20 => ChapterVariant.BloodMoon,
             _ => ChapterVariant.None
         };
 
@@ -910,8 +953,10 @@ public static class GameManager
         {
             RunBuffManager.Add(RunBuffIds.BloodMoonDarkness);
         }
-        else if (_chapterVariant == ChapterVariant.Rainstorm)
+
+        if (Random.Shared.NextDouble() < 0.10)
         {
+            _globalRainActive = true;
             RunBuffManager.Add(RunBuffIds.Wet);
         }
     }
@@ -1223,6 +1268,7 @@ public static class GameManager
     public static void EndRun()
     {
         ResetRunData();
+        DifficultyManager.ResetCurrentRun();
         CurrentRunState = RunState.MainMenu;
     }
 
@@ -1251,10 +1297,9 @@ public static class GameManager
         UnlockedStages.Clear();
         UnlockedNodeIds.Clear();
         ClaimedRewardNodeIds.Clear();
-        ClearCurrentChapterVariant();
+        ClearChapterScopedVariant();
         RunBuffManager.ApplyChapterStart(CurrentChapter);
         BuildMapForCurrentChapter();
-        RollChapterVariant();
         // 魏·双线征伐：必须放在 BuildMapForCurrentChapter() 之后（主Boss节点已就绪）、
         // UnlockedNodeIds.Clear() 之后（不会被随后的清空冲掉）。
         FactionFateManager.TryAddExtraBossNodeForChapter(CurrentChapter);
@@ -1311,6 +1356,7 @@ public static class GameManager
         ClearCurrentChapterVariant();
 
         _chapterVariant = variant;
+        _globalRainActive = variant == ChapterVariant.Rainstorm;
 
         if (_chapterVariant == ChapterVariant.CurseNight)
             RunBuffManager.AddStacks(RunBuffIds.Curse, 2);
@@ -1329,6 +1375,22 @@ public static class GameManager
         else if (_chapterVariant == ChapterVariant.Rainstorm)
             RunBuffManager.RemoveAllStacks(RunBuffIds.Wet);
 
+        _chapterVariant = ChapterVariant.None;
+        if (_globalRainActive)
+        {
+            RunBuffManager.RemoveAllStacks(RunBuffIds.Wet);
+            _globalRainActive = false;
+        }
+    }
+
+    private static void ClearChapterScopedVariant()
+    {
+        // 诅咒之夜只决定第一章外观/专属事件；其“开局获得2层诅咒”是整局状态，
+        // 离开第一章后不能被章节清理误删。血红之月的黑暗标记只持续第一章。
+        if (_chapterVariant == ChapterVariant.BloodMoon)
+        {
+            RunBuffManager.RemoveAllStacks(RunBuffIds.BloodMoonDarkness);
+        }
         _chapterVariant = ChapterVariant.None;
     }
 
@@ -1354,7 +1416,7 @@ public static class GameManager
     /// </summary>
     public static bool HasChapterVariant(ChapterVariant variant)
     {
-        return _chapterVariant == variant;
+        return variant == ChapterVariant.Rainstorm ? _globalRainActive : _chapterVariant == variant;
     }
 
     /// <summary>
@@ -2230,17 +2292,17 @@ public static class GameManager
         foreach (var skillId in newlyGrantedSkillIds)
         {
             var skill = SkillDatabase.GetSkill(skillId);
-            skillNames.Add(skill?.Name ?? skillId);
+            skillNames.Add(skill is null ? skillId : Localization.GetName(skill));
         }
 
         var destroyedText = destroyedEquipmentNames.Count > 0
             ? string.Join("、", destroyedEquipmentNames.ConvertAll(name => $"【{name}】"))
-            : "无";
+            : Localization.Get("common.none");
         var skillText = skillNames.Count > 0
             ? string.Join("、", skillNames.ConvertAll(name => $"【{name}】"))
-            : "无可获得技能";
+            : Localization.Get("reward.no_available_skill");
 
-        return $"夺舍灵魂完成。\n已移除所有未受灵魂标记保护的技能，并摧毁全部装备：{destroyedText}。\n获得SoulPossessionSkill：{skillText}。";
+        return Localization.GetFmt("reward.soul_possession.result_fmt", destroyedText, skillText);
     }
 
     private static void GrantSoulPossessionSkill(SkillRarity rarity, List<string> grantedSkillIds)
@@ -2860,10 +2922,12 @@ public static class GameManager
             ContinueExploreManager.RegenerateChoices(CurrentChapter);
         }
 
-        // 图鉴：只在真正首次进入 Victory 状态时记一次通关，避免这个方法后续再被调用
-        // （理论上不应该，但作为防御）时重复计数。
-        var justWon = CurrentRunState != RunState.Victory && AllStagesCleared();
-        CurrentRunState = AllStagesCleared() ? RunState.Victory : RunState.Map;
+        // 只有当前难度规定的最终章节完成才算整局通关。难度0/1止于第三章，
+        // 难度2/3需要继续完成第四章；中间章节完成仍回到地图流程，不能提前
+        // 写入Run通关统计或触发依赖Victory状态的系统。
+        var runCompleted = AllStagesCleared() && IsFinalChapter;
+        var justWon = CurrentRunState != RunState.Victory && runCompleted;
+        CurrentRunState = runCompleted ? RunState.Victory : RunState.Map;
         if (justWon)
         {
             CodexService.RecordCharacterRunCompleted(CurrentCharacterId);
@@ -3270,6 +3334,7 @@ public static class GameManager
         SeenEventsByChapter.Clear();
         _chapterRoute = ChapterRoute.Default;
         _chapterVariant = ChapterVariant.None;
+        _globalRainActive = false;
         _curseBladeCurrentCurseAmplified = false;
         _hasFreeWineRevive = false;
         RunBuffManager.Reset();
@@ -3305,6 +3370,7 @@ public static class GameManager
         _initialEventFortuneContractPending = false;
         _initialEventAttackTrickChoicePending = false;
         _initialEventStartingManaBonus = 0;
+        _difficultySixChapterThreeSkillChoiceConsumed = false;
         // 放在所有 _initialEventXxx 重置之后：ResetPowerForChapter 读取的 MaxPower
         // 依赖 _initialEventMaxPowerBonus 已经清零，否则新开局会把上一局的电量上限带过来。
         ResetPowerForChapter();

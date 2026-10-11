@@ -57,12 +57,14 @@ public static class FactionFateManager
     }
 
     /// <summary>
-    /// 按当前角色所属阵营随机获得阵营命运（Phase 1 起支持群/魏；蜀/吴候选列表暂为空，
-    /// 对应阵营的角色会因为 candidates.Count == 0 而直接跳过，不会异常获得命运）。
+    /// 难度4起，按当前角色所属阵营随机获得一个阵营命运。
     /// 由 GameManager.SelectCharacter() 在 RollChapterVariant() 之后调用一次。
     /// </summary>
     public static void RollFateIfEligible()
     {
+        // 阵营命运属于难度4起的累加规则。无难度至难度3必须保持空状态，
+        // 从而让所有既有命运效果、HUD和章节骰自然失效。
+        if (!DifficultyManager.FactionFateEnabled) return;
         if (_state.SelectedFateId != null) return; // 防御性幂等：正常流程下 ResetForNewRun 已经清空，这里只是双保险
 
         var faction = GameManager.CurrentCharacter?.Faction;

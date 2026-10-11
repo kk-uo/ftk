@@ -842,7 +842,7 @@ public static class EnemyDatabase
 
     // ────────────────────────────────────────────────────────────────────────────
     // 失疯卖艺人  （第一章 Boss，群，传说）
-    // MaxHP=100（基础），不再携带鳞甲 → 有效 HP=100。
+    // MaxHP=90（基础），不再携带生命装备 → 普通难度有效 HP=90。
     // 技能：击鼓 + 不屈（HP≤0首次 → 复活1HP+2费+下回合无敌）。
     // 装备：战鼓（首次攻击后下回合起攻击+5，维持需每回合出攻击）。
     // 奖励：100金 + 30%概率掉落战鼓。
@@ -855,7 +855,7 @@ public static class EnemyDatabase
             Id = "crazy_performer",
             Name = "失疯卖艺人",
             NameKey = "enemy.crazy_performer.name",
-            MaxHP = 100,
+            MaxHP = 90,
             Type = EnemyType.Boss,
             SkillIds = new List<string>
             {
@@ -936,11 +936,11 @@ public static class EnemyDatabase
 
     // ────────────────────────────────────────────────────────────────────────────
     // 医者  （第一章 Boss，群，史诗）
-    // MaxHP=50（基础），装备藤甲后实例化时自动加 +10 → 有效 HP=60。
+    // MaxHP=40（基础），装备藤甲后实例化时自动加 +10 → 普通难度有效 HP=50。
     // 技能：青囊（桃费用-1）+ 神秘补剂强化（生命≥120后使用必中杀，伤害+5）。
     // 装备：神秘补剂（当前生命≥120时普通杀变为必中杀）+ 藤甲（+10HP，物理减半/火属性翻倍）+ 发芽盆栽（桃+5回复→15）。
     // 奖励：100金 + 50%概率掉落藤甲。
-    // AI：HP<80（有效HP≤60，此条件始终成立）时全力回血；强化后改用必中杀。
+    // AI：HP<80（有效HP≤50，此条件始终成立）时全力回血；强化后改用必中杀。
     // ────────────────────────────────────────────────────────────────────────────
     private static EnemyDefinition CreateBossHealer()
     {
@@ -949,7 +949,7 @@ public static class EnemyDatabase
             Id = "boss_healer",
             Name = "医者",
             NameKey = "enemy.boss_healer.name",
-            MaxHP = 50,     // 基础HP；藤甲在 EnemyInstance 初始化时额外 +10 → 有效60
+            MaxHP = 40,     // 基础HP；藤甲在 EnemyInstance 初始化时额外 +10 → 普通难度有效50
             Type = EnemyType.Boss,
             SkillIds = new List<string> { SkillIds.Qingnang, SkillIds.BossHealerPassive },
             EquipmentIds = new List<string>
@@ -1049,7 +1049,7 @@ public static class EnemyDatabase
 
     // ────────────────────────────────────────────────────────────────────────────
     // 背叛者  （第一章 Boss，群，传说）
-    // MaxHP=70，技能：无双（杀系伤害×2）+ 闭月（偶数回合+1费）+ 连击（被动：2连攻+5伤害偏火雷）。
+    // MaxHP=60，技能：无双（杀系伤害×2）+ 闭月（偶数回合+1费）+ 连击（被动：2连攻+5伤害偏火雷）。
     // 装备：虎符（第4回合结束后+1费，仅一次）。
     // 奖励：100金 + 50%概率掉落虎符。
     // AI：命中后攻击提权；费用≥2显著偏向火/雷；连击激活后由EnemyAI加权。
@@ -1062,7 +1062,7 @@ public static class EnemyDatabase
             Id = "boss_traitor",
             Name = "背叛者",
             NameKey = "enemy.boss_traitor.name",
-            MaxHP = 70,
+            MaxHP = 60,
             Type = EnemyType.Boss,
             SkillIds = new List<string> { SkillIds.Wushuang, SkillIds.Biyue, SkillIds.BossTraitorCombo },
             EquipmentIds = new List<string> { EquipmentIds.TigerTally },
@@ -1707,8 +1707,8 @@ public static class EnemyDatabase
     }
 
     // 左·慈（第二章 Boss，城市路线 2-8，群，传奇）
-    // HP=1（基础值，化形触发后立即变为玩家当前血量）；携带仙毫。
-    // 战斗开始时发动【化形】：复制玩家血量/技能/装备（芯片除外），保留化形与仙毫。
+    // HP=1（化形前占位值）；携带仙毫+钳制机械外骨骼。
+    // 战斗开始时发动【化形】：按玩家角色基础生命（含芯片）重建，再获得其技能/装备。
     private static EnemyDefinition CreateZuoCi()
     {
         return new EnemyDefinition
@@ -1719,10 +1719,11 @@ public static class EnemyDatabase
             MaxHP = 1,
             Type = EnemyType.Boss,
             SkillIds = new List<string> { SkillIds.HuaXing },
-            EquipmentIds = new List<string> { EquipmentIds.XianHao },
+            EquipmentIds = new List<string> { EquipmentIds.XianHao, EquipmentIds.ClampExoskeleton },
             Reward = new EnemyReward
             {
-                DefenseChipDropCount = 1,
+                GoldOverride = 100,
+                AttackChipDropCount = 1,
                 KnowledgeChipDropProbability = 1.0f
             },
             RewardTier = RewardTier.Legendary,
@@ -1808,7 +1809,7 @@ public static class EnemyDatabase
     }
 
     // 帮派头目（第二章 Boss，城市路线 2-8，吴）
-    // HP=180；携带古锭刀+酒囊；技能：破军+长醉。
+    // HP=180；携带古锭刀+酒囊+攻击芯片×2；技能：破军+长醉+疑城。
     // 核心策略：存酒（长醉）→ 顺手牵羊 → 火雷杀+破军爆发。
     private static EnemyDefinition CreateGangBoss()
     {
@@ -1819,11 +1820,18 @@ public static class EnemyDatabase
             NameKey = "enemy.gang_boss.name",
             MaxHP = 180,
             Type = EnemyType.Boss,
-            SkillIds = new List<string> { SkillIds.PoJun, SkillIds.ChangZui },
-            EquipmentIds = new List<string> { EquipmentIds.GuDingDao, EquipmentIds.WinePouch },
+            SkillIds = new List<string> { SkillIds.PoJun, SkillIds.ChangZui, SkillIds.YiCheng },
+            EquipmentIds = new List<string>
+            {
+                EquipmentIds.GuDingDao,
+                EquipmentIds.WinePouch,
+                EquipmentIds.AttackChip,
+                EquipmentIds.AttackChip
+            },
             Reward = new EnemyReward
             {
-                DefenseChipDropCount = 1,
+                GoldOverride = 100,
+                AttackChipDropCount = 1,
                 KnowledgeChipDropProbability = 1.0f
             },
             RewardTier = RewardTier.Legendary,

@@ -4,7 +4,7 @@
 // 模块：Equipment System
 //
 // 职责：
-// 1. 在首回合战斗回合前检查玩家是否装备【时间沙漏】。
+// 1. 在首回合战斗回合前检查任一参战单位是否装备【时间沙漏】。
 // 2. 复用【战场崩坏】规则，提前结算一次第55回合对应的伤害。
 //
 // 不负责：
@@ -37,17 +37,37 @@ public sealed class TimeHourglassEffect : IBattleEffect
     public void Execute(BattleContext context)
     {
         if (context.GameOver
-            || context.TurnCounter != 1
-            || !GameManager.HasEquipment(EquipmentIds.TimeHourglass))
+            || context.TurnCounter != 1)
+        {
+            return;
+        }
+
+        var triggerCount = GameManager.HasEquipment(EquipmentIds.TimeHourglass) ? 1 : 0;
+        if (context.Encounter != null)
+        {
+            foreach (var enemy in context.Encounter.Enemies)
+            {
+                if (!enemy.IsDead)
+                {
+                    triggerCount += enemy.CountEquipment(EquipmentIds.TimeHourglass);
+                }
+            }
+        }
+
+        if (triggerCount <= 0)
         {
             return;
         }
 
         var damage = BattlefieldCollapseEffect.CalculateDamage(BattlefieldCollapseEffect.TriggerTurn);
-        BattlefieldCollapseEffect.ApplyDamage(context, damage);
+        for (var index = 0; index < triggerCount && !context.GameOver; index++)
+        {
+            BattlefieldCollapseEffect.ApplyDamage(context, damage);
+        }
 
-        context.RoundResult.AddLine($"时间沙漏：提前触发第{BattlefieldCollapseEffect.TriggerTurn}回合的战场崩坏，双方受到{damage}点真实伤害。");
+        var totalDamage = damage * triggerCount;
+        context.RoundResult.AddLine($"时间沙漏：提前触发第{BattlefieldCollapseEffect.TriggerTurn}回合的战场崩坏，双方受到{totalDamage}点真实伤害。");
         context.AddTriggerLog("[Equipment/时间沙漏]");
-        context.AddTriggerLog($"首回合战斗回合前：提前触发第{BattlefieldCollapseEffect.TriggerTurn}回合战场崩坏，双方 -{damage}。");
+        context.AddTriggerLog($"首回合战斗回合前：{triggerCount}个时间沙漏提前触发战场崩坏，双方 -{totalDamage}。");
     }
 }

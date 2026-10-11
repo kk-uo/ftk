@@ -582,7 +582,7 @@ public static class InventoryManager
             }
 
             Owned.Add(newItem);
-            names.Add(targetDef.Name);
+            names.Add(Localization.GetName(targetDef));
         }
 
         return names;
@@ -790,6 +790,22 @@ public static class InventoryManager
 
     private static void ApplySoulStoneChipBonus()
     {
+        // 灵魂石：10% 概率落入特殊芯片池（技能、扩容各占一半）；
+        // 其余 90% 均分为三种基础芯片。
+        // 芯片均沿用既有即时结算入口，不进入背包。
+        var roll = System.Random.Shared.NextDouble();
+        if (roll < 0.05)
+        {
+            AddToInventory(EquipmentIds.SkillChip, EquipmentGainSource.GameplayReward);
+            return;
+        }
+
+        if (roll < 0.10)
+        {
+            AddToInventory(EquipmentIds.ExpansionChip, EquipmentGainSource.GameplayReward);
+            return;
+        }
+
         switch (System.Random.Shared.Next(3))
         {
             case 0: GameManager.IncrementAttackChipCount(); break;
@@ -958,7 +974,7 @@ public static class InventoryManager
     {
         var names = new List<string>();
         foreach (var item in Owned)
-            names.Add(item.Definition.Name);
+            names.Add(Localization.GetName(item.Definition));
         Owned.Clear();
         return names;
     }

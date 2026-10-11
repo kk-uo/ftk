@@ -202,24 +202,40 @@ public static class RunBuffManager
     /// </summary>
     public static void ApplyBattleStart(EnemyInstance enemy)
     {
+        // 百分比生命修正先结算，固定生命修正后结算。这样【黑暗】等百分比效果
+        // 不会把血红之月明确写定的“+30生命”再次放大。
         foreach (var buff in ActiveBuffsInternal)
         {
             foreach (var effect in buff.Definition.Effects)
             {
-                if (effect.Timing != RunBuffTriggerTiming.OnBattleStart)
+                if (effect.Timing != RunBuffTriggerTiming.OnBattleStart
+                    || effect.Type != RunBuffEffectType.EnemyMaxHpPercentBonus)
                 {
                     continue;
                 }
 
-                switch (effect.Type)
+                var bonus = (int)Math.Ceiling(enemy.MaxHealth * effect.Value);
+                if (bonus > 0)
                 {
-                    case RunBuffEffectType.EnemyMaxHpPercentBonus:
-                        var bonus = (int)Math.Ceiling(enemy.MaxHealth * effect.Value);
-                        if (bonus > 0)
-                        {
-                            enemy.AddMaxHealth(bonus);
-                        }
-                        break;
+                    enemy.AddMaxHealth(bonus);
+                }
+            }
+        }
+
+        foreach (var buff in ActiveBuffsInternal)
+        {
+            foreach (var effect in buff.Definition.Effects)
+            {
+                if (effect.Timing != RunBuffTriggerTiming.OnBattleStart
+                    || effect.Type != RunBuffEffectType.EnemyMaxHpFlatBonus)
+                {
+                    continue;
+                }
+
+                var flatBonus = (int)Math.Round(effect.Value);
+                if (flatBonus > 0)
+                {
+                    enemy.AddMaxHealth(flatBonus);
                 }
             }
         }

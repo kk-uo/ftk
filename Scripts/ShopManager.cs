@@ -67,8 +67,9 @@ public sealed class ShopOffer
 public static class ShopManager
 {
     public const int SlotCount = 4;
-    /// <summary>第四章普通商店中，每一个商品槽位独立刷新传奇装备的概率。</summary>
+    /// <summary>兼容旧测试与调试显示：难度5第四章每个栏位的传奇概率。</summary>
     public const double ChapterFourLegendarySlotChance = 0.10;
+    public const double BlackMarketLegendarySlotChance = 0.10;
 
     private static readonly Random Random = new();
     private static readonly ShopOffer?[] Slots = new ShopOffer?[SlotCount];
@@ -87,14 +88,7 @@ public static class ShopManager
     /// </summary>
     public static int GetBuyPrice(EquipmentRarity rarity)
     {
-        return rarity switch
-        {
-            EquipmentRarity.Common => 75,
-            EquipmentRarity.Rare => 150,
-            EquipmentRarity.Epic => 300,
-            EquipmentRarity.Legendary => 600,
-            _ => 0
-        };
+        return DifficultyManager.GetBaseShopPrice(rarity);
     }
 
     // 每次进入商店调用：重新生成全部槽位，本次生成内不允许重复装备，并重置刷新次数。
@@ -185,8 +179,8 @@ public static class ShopManager
         };
     }
 
-    // 槽位生成再次检查可售品质。第四章普通商店的每个槽位可独立命中传奇；
-    // 黑市保留自身的传奇规则，载具/巫婆等专属商店不混入这一普通商店加成。
+    // 槽位生成再次检查可售品质。难度5的章节概率与黑市10%概率各自独立判定；
+    // 因此黑市中两次判定都未命中时才回到普通/稀有/史诗池。
     private static void PopulateSlots(IReadOnlyList<EquipmentDefinition> pool, int chapter)
     {
         var chosenIds = new HashSet<string>();
@@ -233,14 +227,15 @@ public static class ShopManager
     /// 判断装备品质是否允许进入任意商店的随机商品槽位。
     ///
     /// 固定事件、Boss 奖励与 Developer Mode 不调用此入口，因此传奇装备的其它获取方式不受影响。
-    /// 黑市与第四章普通商店可放行传奇品质；后者只在每个栏位命中10%刷新时实际抽取。
+    /// 黑市始终允许传奇；难度5中第2-4章的普通/载具商店按章节概率放行传奇。
     /// </summary>
     public static bool CanAppearInShop(EquipmentDefinition definition)
     {
         if (definition.Rarity == EquipmentRarity.Legendary)
         {
             return _currentShopType == ShopType.BlackMarket
-                || (_currentShopType == ShopType.Normal && GameManager.CurrentChapter == 4);
+                || (_currentShopType != ShopType.Witch
+                    && DifficultyManager.GetDifficultyLegendaryShopChance(GameManager.CurrentChapter) > 0.0);
         }
 
         return definition.Rarity is EquipmentRarity.Common
@@ -325,13 +320,13 @@ public static class ShopManager
         if (FactionFateManager.IsFirstPurchaseFreeAvailable())
         {
             return _currentShopType == ShopType.Witch
-                ? "价格：免费（先行采购）  +  永久-10生命上限"
-                : "价格：免费（先行采购）";
+                ? Localization.Get("shop.price.free_witch")
+                : Localization.Get("shop.price.free");
         }
 
         return _currentShopType == ShopType.Witch
-            ? $"价格：{offer.Price}金币  +  永久-10生命上限"
-            : $"价格：{offer.Price}";
+            ? Localization.GetFmt("shop.price.witch_fmt", offer.Price)
+            : Localization.GetFmt("shop.price.fmt", offer.Price);
     }
 
     /// <summary>
@@ -498,8 +493,7 @@ public static class ShopManager
             // （神秘药水等 Epic+boss 标签装备在其它商店/黑市里仍照常可售）。
             if (tag == "boss"
                 && definition.Rarity == EquipmentRarity.Legendary
-                && (_currentShopType == ShopType.BlackMarket
-                    || (_currentShopType == ShopType.Normal && GameManager.CurrentChapter == 4)))
+                && CanAppearInShop(definition))
             {
                 return false;
             }
@@ -512,13 +506,20 @@ public static class ShopManager
     // 第1章 — 普通70% / 稀有25% / 史诗5%
     // 第2章 — 普通30% / 稀有50% / 史诗20%
     // 第3章 — 普通10% / 稀有40% / 史诗50%
-    // 黑市与第四章普通商店额外叠加：每个槽位独立有10%概率直接出传奇，不占用/不影响普通商店三档权重的分布，
-    // 剩余90%仍按章节权重从普通/稀有/史诗中抽取。
+    // 难度5按章节提供2%/4%/10%传奇概率；黑市再进行一次独立10%判定。
+    // 两者均未命中时，仍按章节权重从普通/稀有/史诗中抽取。
     private static EquipmentRarity RollRarity(int chapter)
     {
-        var canRollLegendary = _currentShopType == ShopType.BlackMarket
-            || (_currentShopType == ShopType.Normal && chapter == 4);
-        if (canRollLegendary && Random.NextDouble() < ChapterFourLegendarySlotChance)
+        var difficultyLegendaryChance = _currentShopType == ShopType.Witch
+            ? 0.0
+            : DifficultyManager.GetDifficultyLegendaryShopChance(chapter);
+        if (difficultyLegendaryChance > 0.0 && Random.NextDouble() < difficultyLegendaryChance)
+        {
+            return EquipmentRarity.Legendary;
+        }
+
+        if (_currentShopType == ShopType.BlackMarket
+            && Random.NextDouble() < BlackMarketLegendarySlotChance)
         {
             return EquipmentRarity.Legendary;
         }

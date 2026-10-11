@@ -71,7 +71,7 @@ public partial class BattleManager
 
         var owner = string.IsNullOrWhiteSpace(skill.ExclusiveCharacter)
             ? string.Empty
-            : $"角色专属：{skill.ExclusiveCharacter}\n";
+            : Localization.GetFmt("skill.detail.owner_fmt", skill.ExclusiveCharacter) + "\n";
 
         var category = skill.Category == SkillCategory.CharacterExclusive && !string.IsNullOrWhiteSpace(skill.ExclusiveCharacter)
             ? string.Empty
@@ -85,7 +85,16 @@ public partial class BattleManager
             ? $"\nPriority:\n{skill.Priority.Value}\n"
             : string.Empty;
 
-        return $"{Localization.GetName(skill)}\n\n{category}{owner}稀有度：{SkillText.GetRarityName(skill.Rarity)}\n类型：{kinds}\n{trigger}{priority}\n{Localization.GetDescription(skill)}";
+        return Localization.GetFmt(
+            "skill.detail.debug_fmt",
+            Localization.GetName(skill),
+            category,
+            owner,
+            SkillText.GetRarityName(skill.Rarity),
+            kinds,
+            trigger,
+            priority,
+            Localization.GetDescription(skill));
     }
 
     private void ShowSkillDebugWindow()
@@ -99,7 +108,7 @@ public partial class BattleManager
 
         var window = new Window
         {
-            Title = "技能调试",
+            Title = Localization.Get("battle.skill_debug_btn"),
             Size = new Vector2I(620, 520),
             Exclusive = false
         };
@@ -426,7 +435,7 @@ public partial class BattleManager
 
         var label = new Label
         {
-            Text = $"功能开关：{(DamagePreviewSettings.IsEnabled ? "已开启" : "已关闭")}",
+            Text = GetDamagePreviewToggleText(),
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         root.AddChild(label);
@@ -437,18 +446,23 @@ public partial class BattleManager
 
         buttons.AddChild(CreateDebugActionButton("打印当前手牌预估伤害", () =>
         {
-            label.Text = $"功能开关：{(DamagePreviewSettings.IsEnabled ? "已开启" : "已关闭")}";
+            label.Text = GetDamagePreviewToggleText();
             DumpCurrentHandDamagePreviews();
         }));
         buttons.AddChild(CreateDebugActionButton("开关功能", () =>
         {
             DamagePreviewSettings.SetEnabled(!DamagePreviewSettings.IsEnabled);
-            label.Text = $"功能开关：{(DamagePreviewSettings.IsEnabled ? "已开启" : "已关闭")}";
+            label.Text = GetDamagePreviewToggleText();
             RenderActionCards();
         }));
 
         return root;
     }
+
+    private static string GetDamagePreviewToggleText()
+        => Localization.GetFmt(
+            "devpanel.damage_preview.toggle_fmt",
+            Localization.Get(DamagePreviewSettings.IsEnabled ? "common.enabled" : "common.disabled"));
 
     private void DumpCurrentHandDamagePreviews()
     {

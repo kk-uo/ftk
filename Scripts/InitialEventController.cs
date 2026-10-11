@@ -28,10 +28,8 @@ using System.Collections.Generic;
 /// </summary>
 public partial class InitialEventController : Control
 {
-    private const float PanelWidth = 1680f;
-    private const float PanelHeight = 860f;
     private const float OptionCardMinHeight = 560f;
-    private const float OptionDescriptionMinHeight = 430f;
+    private const float OptionDescriptionMinHeight = 280f;
 
     [Signal]
     public delegate void InitialEventCompletedEventHandler();
@@ -48,67 +46,80 @@ public partial class InitialEventController : Control
     {
         _options = InitialEventManager.Pick3();
         Callable.From(BuildLayout).CallDeferred();
+        Localization.LanguageChanged += RefreshLanguage;
+    }
+
+    public override void _ExitTree() => Localization.LanguageChanged -= RefreshLanguage;
+
+    private void RefreshLanguage()
+    {
+        foreach (var child in GetChildren()) { RemoveChild(child); child.QueueFree(); }
+        BuildLayout(); // 仅重建显示，绝不重新抽取命运。
     }
 
     private void BuildLayout()
     {
-        var background = new ColorRect
+        Theme = new Theme { DefaultFont = GD.Load<Font>("res://Assets/Fonts/NotoSerifCJKsc-Black.otf") };
+        var background = new TextureRect
         {
-            Color = new Color(0.08f, 0.09f, 0.11f),
+            Texture = GD.Load<Texture2D>("res://Assets/Backgrounds/Events/initial_fate_junkyard.png"),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
+            MouseFilter = MouseFilterEnum.Ignore,
+            TextureFilter = TextureFilterEnum.Nearest
+        };
+        AddChild(background);
+        background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        AddChild(new MainMenuCrtFilter { Name = "BackgroundCrtFilter" });
+
+        var titleFrame = new FateTerminalFrame
+        {
+            AnchorLeft = .03f, AnchorTop = .035f, AnchorRight = .30f, AnchorBottom = .14f,
             MouseFilter = MouseFilterEnum.Ignore
         };
-        background.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(background);
-
-        var center = new CenterContainer();
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(center);
-
-        var panel = new PanelContainer
-        {
-            CustomMinimumSize = new Vector2(PanelWidth, PanelHeight)
-        };
-        center.AddChild(panel);
-
-        var margin = new MarginContainer();
-        margin.AddThemeConstantOverride("margin_left", 36);
-        margin.AddThemeConstantOverride("margin_top", 32);
-        margin.AddThemeConstantOverride("margin_right", 36);
-        margin.AddThemeConstantOverride("margin_bottom", 32);
-        panel.AddChild(margin);
-
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 20);
-        margin.AddChild(root);
+        AddChild(titleFrame);
 
         var title = new Label
         {
             Text = Localization.Get("initial_event.title"),
-            HorizontalAlignment = HorizontalAlignment.Center
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
         };
-        title.AddThemeFontSizeOverride("font_size", 52);
-        root.AddChild(title);
+        title.AddThemeFontSizeOverride("font_size", 72);
+        title.AddThemeColorOverride("font_color", new Color("f52b61"));
+        titleFrame.AddChild(title);
 
         var subtitle = new Label
         {
             Text = Localization.Get("initial_event.subtitle"),
-            HorizontalAlignment = HorizontalAlignment.Center
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            AnchorLeft = .165f, AnchorTop = .15f, AnchorRight = .835f, AnchorBottom = .22f
         };
-        subtitle.AddThemeFontSizeOverride("font_size", 20);
-        root.AddChild(subtitle);
+        subtitle.AddThemeFontSizeOverride("font_size", 34);
+        subtitle.AddThemeColorOverride("font_shadow_color", Colors.Black);
+        subtitle.AddThemeConstantOverride("shadow_offset_x", 2);
+        subtitle.AddThemeConstantOverride("shadow_offset_y", 3);
+        AddChild(subtitle);
 
-        _optionRow = new HBoxContainer();
-        _optionRow.SizeFlagsVertical = SizeFlags.ExpandFill;
-        _optionRow.AddThemeConstantOverride("separation", 16);
-        root.AddChild(_optionRow);
+        _optionRow = new HBoxContainer
+        {
+            // 左右、上下锚点关于画面中心对称，整组选项保持居中。
+            AnchorLeft = .165f, AnchorTop = .23f, AnchorRight = .835f, AnchorBottom = .77f
+        };
+        _optionRow.AddThemeConstantOverride("separation", 28);
+        AddChild(_optionRow);
 
         RebuildOptionCards();
     }
 
-    private Control BuildOptionCard(InitialEventDefinition entry)
+    private Control BuildOptionCard(InitialEventDefinition entry, int index)
     {
-        var panel = new PanelContainer
+        var accent = new Color(new[] { "f22c62", "27c7d2", "f6b43d" }[index % 3]);
+        var panel = new FateTerminalFrame
         {
+            Accent = accent,
             CustomMinimumSize = new Vector2(0, OptionCardMinHeight),
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill
@@ -117,15 +128,30 @@ public partial class InitialEventController : Control
         panel.MouseExited += () => TooltipManager.Hide();
 
         var margin = new MarginContainer();
-        margin.AddThemeConstantOverride("margin_left", 20);
-        margin.AddThemeConstantOverride("margin_top", 20);
-        margin.AddThemeConstantOverride("margin_right", 20);
-        margin.AddThemeConstantOverride("margin_bottom", 20);
+        margin.AddThemeConstantOverride("margin_left", 36);
+        margin.AddThemeConstantOverride("margin_top", 40);
+        margin.AddThemeConstantOverride("margin_right", 36);
+        margin.AddThemeConstantOverride("margin_bottom", 36);
         panel.AddChild(margin);
 
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 12);
+        col.AddThemeConstantOverride("separation", 28);
         margin.AddChild(col);
+
+        var code = new Label { Text = $"DATA://{index + 1:D2}" };
+        code.AddThemeFontSizeOverride("font_size", 20);
+        code.AddThemeColorOverride("font_color", accent);
+        col.AddChild(code);
+        var heading = new Label
+        {
+            Text = string.Format(Localization.Get("initial_event.fate_option_fmt"), index + 1),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        heading.AddThemeFontSizeOverride("font_size", 36);
+        heading.AddThemeColorOverride("font_color", accent);
+        col.AddChild(heading);
+        var rule = new ColorRect { Color = new Color(accent,.5f), CustomMinimumSize = new Vector2(0,2), MouseFilter = MouseFilterEnum.Ignore };
+        col.AddChild(rule);
 
         var descLabel = new RichTextLabel
         {
@@ -138,17 +164,17 @@ public partial class InitialEventController : Control
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill
         };
-        descLabel.AddThemeFontSizeOverride("normal_font_size", 25);
+        descLabel.AddThemeFontSizeOverride("normal_font_size", 32);
         col.AddChild(descLabel);
 
         var actions = new HBoxContainer();
         actions.AddThemeConstantOverride("separation", 8);
         col.AddChild(actions);
 
-        var chooseBtn = new Button
+        var chooseBtn = new FateSelectButton
         {
-            Text = Localization.Get("initial_event.choose_button"),
-            CustomMinimumSize = new Vector2(0, 56),
+            Accent = accent,
+            CustomMinimumSize = new Vector2(0, 88),
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
         chooseBtn.AddThemeFontSizeOverride("font_size", 26);
@@ -185,9 +211,9 @@ public partial class InitialEventController : Control
             child.QueueFree();
         }
 
-        foreach (var entry in _options)
+        for (var index = 0; index < _options.Count; index++)
         {
-            _optionRow.AddChild(BuildOptionCard(entry));
+            _optionRow.AddChild(BuildOptionCard(_options[index], index));
         }
     }
 

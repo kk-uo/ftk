@@ -72,13 +72,27 @@ public static class EnemyFactory
     /// </summary>
     public static void ApplyBattleStartHpScaling(EnemyInstance enemy, EnemyDefinition definition)
     {
-        RunBuffManager.ApplyBattleStart(enemy);
         // 初始事件③代价：所有传奇敌人最大生命+30%
         if (GameManager.InitialEventLegendaryEnemyHpBonus
             && definition.RewardTier == RewardTier.Legendary)
         {
             var bonus = (int)Math.Ceiling(enemy.MaxHealth * 0.30);
             if (bonus > 0) enemy.AddMaxHealth(bonus);
+        }
+
+        // 局内Buff放在百分比初始事件之后应用，使血红之月“固定+30生命”保持
+        // 真正的固定加值，不会再被其它百分比生命修正放大。
+        RunBuffManager.ApplyBattleStart(enemy);
+
+        // 难度2起按章节给Boss增加固定生命值。固定加值放在百分比修正之后，
+        // 避免被诅咒/初始事件等百分比效果再次放大。
+        if (definition.Type == EnemyType.Boss)
+        {
+            var difficultyBonus = DifficultyManager.GetBossHealthBonus(GameManager.CurrentChapter);
+            if (difficultyBonus > 0)
+            {
+                enemy.AddMaxHealth(difficultyBonus);
+            }
         }
     }
 }

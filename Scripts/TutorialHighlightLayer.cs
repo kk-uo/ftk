@@ -26,6 +26,15 @@
 using Godot;
 using System;
 
+/// <summary>
+/// 教程说明卡的停靠位置。各个真实界面可根据自己的关键交互区域选择不遮挡内容的位置。
+/// </summary>
+public enum TutorialGuidePanelPlacement
+{
+    TopRight,
+    BottomCenter
+}
+
 public partial class TutorialHighlightLayer : CanvasLayer
 {
     /// <summary>点击"继续"按钮时触发（仅当 ShowStep 的 showContinueButton=true 时按钮可见）。</summary>
@@ -48,6 +57,11 @@ public partial class TutorialHighlightLayer : CanvasLayer
     private const float GuidePanelWidth = 620f;
     private const float GuidePanelHeight = 360f;
     private const float ScreenMargin = 32f;
+
+    /// <summary>
+    /// 默认沿用其它教程页面的右上角说明卡。背包页可改为底部居中，避免挡住出售栏和芯片统计。
+    /// </summary>
+    public TutorialGuidePanelPlacement GuidePanelPlacement { get; set; } = TutorialGuidePanelPlacement.TopRight;
 
     public override void _Ready()
     {
@@ -224,22 +238,27 @@ public partial class TutorialHighlightLayer : CanvasLayer
 
         var width = Mathf.Min(GuidePanelWidth, viewportSize.X - ScreenMargin * 2f);
         var height = Mathf.Min(GuidePanelHeight, viewportSize.Y - ScreenMargin * 2f);
-        var fixedRightPlacement = new Rect2(viewportSize.X - width - ScreenMargin, ScreenMargin, width, height);
+        var panelPlacement = GuidePanelPlacement == TutorialGuidePanelPlacement.BottomCenter
+            ? new Rect2((viewportSize.X - width) / 2f, viewportSize.Y - height - ScreenMargin, width, height)
+            : new Rect2(viewportSize.X - width - ScreenMargin, ScreenMargin, width, height);
 
-        _panel.OffsetLeft = fixedRightPlacement.Position.X;
-        _panel.OffsetRight = fixedRightPlacement.End.X;
-        _panel.OffsetTop = fixedRightPlacement.Position.Y;
-        _panel.OffsetBottom = fixedRightPlacement.End.Y;
+        _panel.OffsetLeft = panelPlacement.Position.X;
+        _panel.OffsetRight = panelPlacement.End.X;
+        _panel.OffsetTop = panelPlacement.Position.Y;
+        _panel.OffsetBottom = panelPlacement.End.Y;
 
         if (_collapseToggleButton != null)
         {
-            var toggleTop = fixedRightPlacement.End.Y + 4f;
+            // 底部说明卡的展开按钮放在卡片上方，防止越出屏幕；右上角则保持原有的卡片下方位置。
+            var toggleTop = GuidePanelPlacement == TutorialGuidePanelPlacement.BottomCenter
+                ? panelPlacement.Position.Y - 56f
+                : panelPlacement.End.Y + 4f;
             _collapseToggleButton.AnchorLeft = 0f;
             _collapseToggleButton.AnchorRight = 0f;
             _collapseToggleButton.AnchorTop = 0f;
             _collapseToggleButton.AnchorBottom = 0f;
-            _collapseToggleButton.OffsetLeft = fixedRightPlacement.GetCenter().X - 40f;
-            _collapseToggleButton.OffsetRight = fixedRightPlacement.GetCenter().X + 40f;
+            _collapseToggleButton.OffsetLeft = panelPlacement.GetCenter().X - 40f;
+            _collapseToggleButton.OffsetRight = panelPlacement.GetCenter().X + 40f;
             _collapseToggleButton.OffsetTop = toggleTop;
             _collapseToggleButton.OffsetBottom = toggleTop + 52f;
         }

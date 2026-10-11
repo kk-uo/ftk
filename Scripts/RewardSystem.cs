@@ -332,7 +332,7 @@ public sealed class HealRewardAction : RewardAction
         var before = GameManager.CurrentHP;
         GameManager.AddCurrentHp(Amount);
         var healed = GameManager.CurrentHP - before;
-        return Result(healed > 0 ? $"恢复：{healed} HP" : null, $"+{healed} HP");
+        return Result(healed > 0 ? Localization.GetFmt("reward.heal_fmt", healed) : null, $"+{healed} HP");
     }
 }
 
@@ -360,7 +360,7 @@ public sealed class LoseCurrentHpRewardAction : RewardAction
     {
         if (GameManager.CurrentHP < Amount)
         {
-            reason = "生命不足";
+            reason = Localization.Get("ui.insufficient_current_hp");
             return false;
         }
 
@@ -405,7 +405,7 @@ public sealed class LosePowerRewardAction : RewardAction
     {
         if (GameManager.Power < Amount)
         {
-            reason = "电量不足";
+            reason = Localization.Get("ui.insufficient_power");
             return false;
         }
 
@@ -448,7 +448,7 @@ public sealed class AddMaxHpRewardAction : RewardAction
     public override RewardExecutionResult Execute()
     {
         GameManager.AddMaxHp(Amount);
-        return Result(Amount > 0 ? $"最大生命 +{Amount}" : null, $"+{Amount} MaxHP");
+        return Result(Amount > 0 ? Localization.GetFmt("reward.max_hp_gain_fmt", Amount) : null, $"+{Amount} MaxHP");
     }
 }
 
@@ -508,7 +508,7 @@ public sealed class LoseMaxHpPercentRewardAction : RewardAction
         var loss = System.Math.Max(1, before * Percent / 100);
         loss = System.Math.Min(loss, System.Math.Max(0, before - 1));
         GameManager.AddMaxHp(-loss);
-        return Result($"最大生命 -{loss}", $"LoseMaxHpPercent {Percent}% ({before}->{GameManager.MaxHP})");
+        return Result(Localization.GetFmt("reward.max_hp_loss_fmt", loss), $"LoseMaxHpPercent {Percent}% ({before}->{GameManager.MaxHP})");
     }
 }
 
@@ -518,7 +518,7 @@ public sealed class RemoveAllChipsRewardAction : RewardAction
     public override RewardExecutionResult Execute()
     {
         var removed = GameManager.ClearAllChips();
-        return Result(removed > 0 ? $"失去芯片 ×{removed}" : null, $"RemoveAllChips {removed}");
+        return Result(removed > 0 ? Localization.GetFmt("reward.chips_lost_fmt", removed) : null, $"RemoveAllChips {removed}");
     }
 }
 
@@ -528,7 +528,11 @@ public sealed class DestroyAllEquipmentRewardAction : RewardAction
     public override RewardExecutionResult Execute()
     {
         var destroyed = InventoryManager.DestroyAllEquipment();
-        return Result(destroyed.Count > 0 ? $"抛弃装备 ×{destroyed.Count}" : null, $"DestroyAllEquipment {destroyed.Count}");
+        return Result(
+            destroyed.Count > 0
+                ? Localization.GetFmt("event.reward.destroy_equipment_count_fmt", destroyed.Count)
+                : null,
+            $"DestroyAllEquipment {destroyed.Count}");
     }
 }
 
@@ -541,7 +545,7 @@ public sealed class AddPlayerAttackAttributesRewardAction : RewardAction
     public override RewardExecutionResult Execute()
     {
         GameManager.GrantPlayerAttackAttributes(Attributes);
-        return Result($"所有攻击牌获得{AttackAttributeRules.GetTraitText(Attributes)}", $"AddPlayerAttackAttributes {Attributes}");
+        return Result(Localization.GetFmt("reward.attack_attributes_fmt", AttackAttributeRules.GetTraitText(Attributes)), $"AddPlayerAttackAttributes {Attributes}");
     }
 }
 
@@ -554,7 +558,7 @@ public sealed class AddPlayerCardRewardAction : RewardAction
     public override RewardExecutionResult Execute()
     {
         GameManager.AddPlayerCardType(CardType);
-        return Result($"出牌栏加入【{BattleRules.GetCardName(CardType)}】", $"AddPlayerCard {CardType}");
+        return Result(Localization.GetFmt("reward.add_player_card_fmt", BattleRules.GetCardName(CardType)), $"AddPlayerCard {CardType}");
     }
 }
 
@@ -565,7 +569,7 @@ public sealed class AwakenMoonGemElementsRewardAction : RewardAction
     {
         if (!GameManager.OwnsEquipment(EquipmentIds.MoonGem))
         {
-            reason = "未拥有月亮宝石";
+            reason = Localization.Get("reward.moon_gem.required");
             return false;
         }
 
@@ -576,7 +580,7 @@ public sealed class AwakenMoonGemElementsRewardAction : RewardAction
     public override RewardExecutionResult Execute()
     {
         var awakened = GameManager.TryAwakenMoonGemElements();
-        return Result(awakened ? "月亮宝石进化：天体撞击获得全部元素词条。" : null, $"AwakenMoonGemElements {awakened}");
+        return Result(awakened ? Localization.Get("reward.moon_gem.awakened") : null, $"AwakenMoonGemElements {awakened}");
     }
 }
 
@@ -713,7 +717,9 @@ public sealed class AddEquipmentRewardAction : RewardAction
             || GameManager.InitialEventAutoDestroyCount > autoDestroyCount;
         if (delivered)
         {
-            return Result($"获得装备：【{name}】", $"AddEquipment {EquipmentId} source={Source} delivered=true");
+            return Result(
+                Localization.GetFmt("event.reward.gain_equipment_fmt", name),
+                $"AddEquipment {EquipmentId} source={Source} delivered=true");
         }
 
         var result = Result(null, $"AddEquipment {EquipmentId} source={Source} delivered=false");
@@ -752,7 +758,11 @@ public sealed class RemoveEquipmentRewardAction : RewardAction
             }
 
             InventoryManager.DestroyEquipment(item.InstanceId);
-            return Result($"移除装备：【{Localization.GetName(item.Definition)}】", $"RemoveEquipment {EquipmentId}");
+            return Result(
+                Localization.GetFmt(
+                    "event.reward.remove_equipment_fmt",
+                    Localization.GetName(item.Definition)),
+                $"RemoveEquipment {EquipmentId}");
         }
 
         return Result(null, $"RemoveEquipment missing {EquipmentId}");
@@ -820,7 +830,9 @@ public sealed class TransformEquipmentRewardAction : RewardAction
             }
 
             var toName = toDef is null ? ToEquipmentId : Localization.GetName(toDef);
-            return Result($"装备转化为：【{toName}】", $"TransformEquipment {FromEquipmentId}->{ToEquipmentId}");
+            return Result(
+                Localization.GetFmt("event.reward.transform_equipment_fmt", toName),
+                $"TransformEquipment {FromEquipmentId}->{ToEquipmentId}");
         }
 
         return Result(null, $"TransformEquipment missing {FromEquipmentId}");
@@ -858,7 +870,7 @@ public sealed class AddSkillRewardAction : RewardAction
         GameManager.AddAcquiredSkill(SkillId, SoulPossessionSkill);
         var skillDef = SkillDatabase.GetSkill(SkillId);
         var name = skillDef is null ? SkillId : Localization.GetName(skillDef);
-        return Result($"获得技能：【{name}】", $"AddSkill {SkillId}");
+        return Result(Localization.GetFmt("reward.skill_gain_fmt", name), $"AddSkill {SkillId}");
     }
 }
 
@@ -1057,17 +1069,17 @@ public sealed class AddChipRewardAction : RewardAction
             }
         }
 
-        return Result($"获得{FormatChipName(ChipType)} ×{Count}", $"AddChip {ChipType} x{Count}");
+        return Result(Localization.GetFmt("reward.chip_gain_fmt", FormatChipName(ChipType), Count), $"AddChip {ChipType} x{Count}");
     }
 
     private static string FormatChipName(RewardChipType type)
         => type switch
         {
-            RewardChipType.Attack => "攻击芯片",
-            RewardChipType.Defense => "防御芯片",
-            RewardChipType.Knowledge => "知识芯片",
-            RewardChipType.Expansion => "扩容芯片",
-            _ => "芯片"
+            RewardChipType.Attack => Localization.Get("chip.attack.name"),
+            RewardChipType.Defense => Localization.Get("chip.defense.name"),
+            RewardChipType.Knowledge => Localization.Get("chip.knowledge.name"),
+            RewardChipType.Expansion => Localization.Get("chip.expansion.name"),
+            _ => Localization.Get("chip.generic")
         };
 }
 
@@ -1310,14 +1322,18 @@ public sealed class RandomEquipmentByRarityRewardAction : RewardAction
 
         if (candidates.Count == 0)
         {
-            return Result($"没有可获得的{Rarity}装备。", $"RandomEquipmentByRarity empty {Rarity}");
+            return Result(
+                Localization.GetFmt(
+                    "event.reward.no_equipment_rarity_fmt",
+                    Localization.GetRarityName(Rarity)),
+                $"RandomEquipmentByRarity empty {Rarity}");
         }
 
         var chosen = candidates[Random.Next(candidates.Count)];
         GameManager.AddEquipment(chosen.Id);
         var chosenDisplayName = Localization.GetName(chosen);
         var message = string.IsNullOrWhiteSpace(ResultTextTemplate)
-            ? $"获得装备：【{chosenDisplayName}】"
+            ? Localization.GetFmt("event.reward.gain_equipment_fmt", chosenDisplayName)
             : ResultTextTemplate.Replace("{name}", chosenDisplayName, System.StringComparison.Ordinal);
         return Result(message, $"RandomEquipmentByRarity {Rarity}: {chosen.Id}");
     }
@@ -1359,13 +1375,17 @@ public sealed class RandomEquipmentByCategoryAndRarityRewardAction : RewardActio
 
         if (candidates.Count == 0)
         {
-            return Result("没有可获得的装备。", $"RandomEquipmentByCategoryAndRarity empty {Category} {Rarity}");
+            return Result(
+                Localization.Get("event.reward.no_equipment"),
+                $"RandomEquipmentByCategoryAndRarity empty {Category} {Rarity}");
         }
 
         var chosen = candidates[Random.Next(candidates.Count)];
         GameManager.AddEquipment(chosen.Id, EquipmentGainSource.EventReward);
         var displayName = Localization.GetName(chosen);
-        return Result($"获得装备：【{displayName}】", $"RandomEquipmentByCategoryAndRarity {Category} {Rarity}: {chosen.Id}");
+        return Result(
+            Localization.GetFmt("event.reward.gain_equipment_fmt", displayName),
+            $"RandomEquipmentByCategoryAndRarity {Category} {Rarity}: {chosen.Id}");
     }
 }
 
@@ -1405,12 +1425,14 @@ public sealed class RandomEquipmentFromPoolRewardAction : RewardAction
         }
 
         if (candidates.Count == 0)
-            return Result("没有可用装备。", "RandomEquipmentFromPool empty");
+            return Result(Localization.Get("event.reward.no_equipment"), "RandomEquipmentFromPool empty");
 
         var chosen = candidates[Random.Next(candidates.Count)];
         GameManager.AddEquipment(chosen.Id);
         var displayName = Localization.GetName(chosen);
-        return Result($"获得装备：【{displayName}】", $"RandomEquipmentFromPool: {chosen.Id}");
+        return Result(
+            Localization.GetFmt("event.reward.gain_equipment_fmt", displayName),
+            $"RandomEquipmentFromPool: {chosen.Id}");
     }
 }
 

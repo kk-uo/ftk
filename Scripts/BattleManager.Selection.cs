@@ -710,8 +710,46 @@ public partial class BattleManager
             }
         }
 
+        if (isMainBossNode)
+        {
+            ApplyDifficultySixBossModifiers();
+        }
+
         GD.Print($"[Encounter] BattleEncounter.Enemies.Count={_encounter.Enemies.Count}");
         InitSharedHealthPoolIfNeeded();
+    }
+
+    /// <summary>
+    /// 难度6只强化各章主Boss节点：第一、二章追加护卫，第三、四章让遭遇中
+    /// 第一名Boss携带指定装备。运行时修改实例，不污染敌人数据库或其它难度。
+    /// </summary>
+    private void ApplyDifficultySixBossModifiers()
+    {
+        var companionId = DifficultyManager.GetBossCompanionEnemyId(GameManager.CurrentChapter);
+        if (!string.IsNullOrWhiteSpace(companionId))
+        {
+            var companion = EnemyFactory.CreateEnemy(companionId);
+            if (companion != null)
+            {
+                _encounter.Enemies.Add(companion);
+                LogEnemySpawn(companion);
+            }
+        }
+
+        var equipmentId = DifficultyManager.GetBossBonusEquipmentId(GameManager.CurrentChapter);
+        if (string.IsNullOrWhiteSpace(equipmentId))
+        {
+            return;
+        }
+
+        foreach (var enemy in _encounter.Enemies)
+        {
+            if (enemy.Definition.Type == EnemyType.Boss)
+            {
+                enemy.TryAddBattleEquipment(equipmentId);
+                break;
+            }
+        }
     }
 
     private void InitSharedHealthPoolIfNeeded()
@@ -1074,7 +1112,8 @@ public partial class BattleManager
             // 走正常的+10/满血回复，改用战斗结束瞬间玩家的真实血量决定；互伤胜利
             // 最低保留1HP，其余情况直接按当前正生命退出。必须在下面 SettleBattleVictoryGold 读取
             // _player.Health 之前调用，两处用的是同一个"战斗结束瞬间"的快照。
-            if (_turnNumber >= BattlefieldCollapseEffect.TriggerTurn)
+            if (DifficultyManager.TimeCollapseEnabled
+                && _turnNumber >= BattlefieldCollapseEffect.TriggerTurn)
             {
                 GameManager.ArmCollapseVictoryHealthOverride(_player.Health);
             }
@@ -1116,6 +1155,12 @@ public partial class BattleManager
                 {
                     GameManager.IncrementDefenseChipCount();
                     GD.Print($"[BattleManager] Defense chip dropped from {enemy.Name}");
+                }
+
+                for (var ac = 0; ac < enemy.Definition.Reward.AttackChipDropCount; ac++)
+                {
+                    GameManager.IncrementAttackChipCount();
+                    GD.Print($"[BattleManager] Attack chip dropped from {enemy.Name}");
                 }
 
                 foreach (var equipId in enemy.Definition.Reward.EquipmentRewards)

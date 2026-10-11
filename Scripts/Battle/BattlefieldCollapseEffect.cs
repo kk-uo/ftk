@@ -4,7 +4,7 @@
 // 模块：Battle Rules（全局战斗规则）
 //
 // 为什么存在：
-// 【战场崩坏】是一条不属于任何角色/装备的全局战斗规则：第55回合结束开始，
+// 【战场崩坏】是难度3起生效、且不属于任何角色/装备的全局战斗规则：第55回合结束开始，
 // 双方所有单位每回合结束都会受到递增的环境伤害（本回合数-54）。这类"和具体
 // 角色/装备无关、影响所有战斗"的规则应该作为独立的 IBattleEffect 通过
 // BattleRules.cs 统一注册，不应该散落进 BattleManager 或某个角色技能里；
@@ -37,7 +37,7 @@
 //////////////////////////////////////////////////////////
 
 /// <summary>
-/// 全局战斗规则【战场崩坏】：第55回合结束起，双方所有单位每回合结束
+/// 难度3起的全局战斗规则【战场崩坏】：第55回合结束起，双方所有单位每回合结束
 /// 受到递增的环境伤害（本回合数 - 54），无视护盾/闪避/防御，不触发
 /// 任何攻击/出牌相关技能或反击，仅作为环境伤害结算。
 /// </summary>
@@ -160,6 +160,13 @@ public sealed class BattlefieldCollapseEffect : IBattleEffect
     /// </summary>
     public void Execute(BattleContext context)
     {
+        // 难度3起才启用持续的第55回合崩坏。时间沙漏调用的是公开的
+        // CalculateDamage + ApplyDamage，不经过这里，因此仍能在低难度独立提前触发一次。
+        if (!DifficultyManager.TimeCollapseEnabled)
+        {
+            return;
+        }
+
         var damage = CalculateDamage(context.TurnCounter);
         if (damage <= 0)
         {

@@ -51,6 +51,7 @@ public enum RunBuffTriggerTiming
 public enum RunBuffEffectType
 {
     EnemyMaxHpPercentBonus,
+    EnemyMaxHpFlatBonus,
     PlayerDamageTakenMultiplierBonus,
     PlayerDamageDealtMultiplierBonus,
     BlockPlayerHealing,

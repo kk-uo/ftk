@@ -708,13 +708,90 @@ public static class EventManager
         var visibleOptions = new List<EventOption>();
         foreach (var option in eventData.Options)
         {
+            // 酒馆等旧事件可能在静态数据里自带黑市入口；它同样属于难度3规则，
+            // 低难度必须先过滤掉，不能只限制后面动态追加的新入口。
+            if (!DifficultyManager.BlackMarketEventOptionEnabled
+                && OptionOpensBlackMarket(option))
+            {
+                continue;
+            }
+
             if (IsOptionVisible(option))
             {
                 visibleOptions.Add(option);
             }
         }
 
+        // 难度3起，所有商店相关事件追加一个进入黑市的选择。该选项只在返回值中
+        // 动态构造，不写回 EventDatabase，避免重进界面或跨Run时永久污染静态事件数据。
+        if (DifficultyManager.BlackMarketEventOptionEnabled
+            && IsShopRelatedEvent(eventData)
+            && !ContainsBlackMarketOption(visibleOptions))
+        {
+            visibleOptions.Add(new EventOption
+            {
+                Name = "进入黑市",
+                NameKey = "event.difficulty_black_market.name",
+                Description = "进入黑市。每个商品栏位额外独立判定10%传奇装备，价格为普通商店的1.5倍。",
+                DescriptionKey = "event.difficulty_black_market.desc",
+                Rewards = new List<EventReward>
+                {
+                    new() { Type = EventRewardType.OpenBlackMarketShop }
+                }
+            });
+        }
+
         return visibleOptions;
+    }
+
+    private static bool IsShopRelatedEvent(EventData eventData)
+    {
+        if (eventData.Category == EventCategory.Shop
+            || eventData.Id.Contains("shop", StringComparison.OrdinalIgnoreCase)
+            || eventData.Id.Contains("tavern", StringComparison.OrdinalIgnoreCase)
+            || eventData.Id.Contains("witch", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        foreach (var option in eventData.Options)
+        {
+            foreach (var reward in option.Rewards)
+            {
+                if (reward.Type is EventRewardType.OpenShopUI
+                    or EventRewardType.OpenVehicleShop
+                    or EventRewardType.OpenWitchShop
+                    or EventRewardType.OpenBlackMarketShop)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsBlackMarketOption(IReadOnlyList<EventOption> options)
+    {
+        foreach (var option in options)
+        {
+            if (OptionOpensBlackMarket(option)) return true;
+        }
+
+        return false;
+    }
+
+    private static bool OptionOpensBlackMarket(EventOption option)
+    {
+        foreach (var reward in option.Rewards)
+        {
+            if (reward.Type == EventRewardType.OpenBlackMarketShop)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -1175,14 +1252,14 @@ public static class EventManager
                 return null;
             case EventRewardType.TempHp:
                 GameManager.AddTempHp(reward.Amount);
-                return $"获得 {reward.Amount} 点临时生命值（当前：{GameManager.CurrentHP + GameManager.TempHp}/{GameManager.MaxHP}）。";
+                return Localization.GetFmt("event.reward.temp_hp_fmt", reward.Amount, GameManager.CurrentHP + GameManager.TempHp, GameManager.MaxHP);
             case EventRewardType.MaxHp:
                 if (reward.Amount >= 0)
                     RewardManager.Execute(new RewardSequence().Add(new AddMaxHpRewardAction(reward.Amount)));
                 else
                     RewardManager.Execute(new RewardSequence().Add(new LoseMaxHpRewardAction(-reward.Amount)));
                 // 负数变化不产生提示文本（配合血祭等"消耗"类奖励使用）。
-                return reward.Amount > 0 ? $"你获得了{reward.Amount}点最大生命值。" : null;
+                return reward.Amount > 0 ? Localization.GetFmt("event.reward.max_hp_fmt", reward.Amount) : null;
             case EventRewardType.Skill:
                 RewardManager.Execute(new RewardSequence().Add(new AddSkillRewardAction(reward.StringValue)));
                 return null;
@@ -1194,21 +1271,26 @@ public static class EventManager
                 var stinkyEquipId = GameManager.GetStinkyMushroomColorForOption(reward.Amount);
                 RewardManager.Execute(new RewardSequence().Add(new AddEquipmentRewardAction(stinkyEquipId)));
                 var stinkyEquipment = EquipmentDatabase.GetEquipment(stinkyEquipId);
-                return stinkyEquipment is null ? null : $"获得了【{Localization.GetName(stinkyEquipment)}】。";
+                return stinkyEquipment is null
+                    ? null
+                    : Localization.GetFmt("event.reward.gain_equipment_fmt", Localization.GetName(stinkyEquipment));
             }
             case EventRewardType.DeferredEquipmentAfterNextBattle:
                 GameManager.SetPendingNextBattleEquipmentReward(reward.StringValue);
-                return "你将在下一场胜利后获得一件随机装备。";
+                return Localization.Get("event.reward.deferred_next_battle");
             case EventRewardType.DeferredEquipmentAfterChapterBoss:
                 if (GameManager.IsChapterBossDefeated(reward.Amount))
                 {
                     GameManager.AddEquipment(reward.StringValue);
                     var equipment = EquipmentDatabase.GetEquipment(reward.StringValue);
-                    return $"你获得了老者赠予的{(equipment is null ? reward.StringValue : Localization.GetName(equipment))}。";
+                    var equipmentName = equipment is null ? reward.StringValue : Localization.GetName(equipment);
+                    return Localization.GetFmt("event.reward.chapter_boss_gift_fmt", equipmentName);
                 }
 
                 GameManager.SetPendingChapterBossEquipmentReward(reward.Amount, reward.StringValue);
-                return $"你将在击败{GameManager.GetChapterDisplayName(reward.Amount)}Boss后获得装备。";
+                return Localization.GetFmt(
+                    "event.reward.deferred_chapter_boss_fmt",
+                    GameManager.GetChapterDisplayName(reward.Amount));
             case EventRewardType.RandomEquipmentFromPool:
             {
                 // ======================================================
@@ -1246,7 +1328,7 @@ public static class EventManager
                     return reward.ResultTextTemplate.Replace("{name}", displayName, StringComparison.Ordinal);
                 }
 
-                return $"你获得了：【{displayName}】";
+                return Localization.GetFmt("event.reward.gain_equipment_fmt", displayName);
             }
             case EventRewardType.RandomEquipmentByRarity:
             {
@@ -1267,7 +1349,9 @@ public static class EventManager
 
                 if (candidates.Count == 0)
                 {
-                    return $"没有可获得的{FormatEquipmentRarity(rarity)}装备。";
+                    return Localization.GetFmt(
+                        "event.reward.no_equipment_rarity_fmt",
+                        FormatEquipmentRarity(rarity));
                 }
 
                 var chosen = candidates[Random.Next(candidates.Count)];
@@ -1278,53 +1362,53 @@ public static class EventManager
                     return reward.ResultTextTemplate.Replace("{name}", chosenName, StringComparison.Ordinal);
                 }
 
-                return $"你获得了：【{chosenName}】";
+                return Localization.GetFmt("event.reward.gain_equipment_fmt", chosenName);
             }
             // ————————————————————————————————————————
             // 石碑 / 芯片系统
             // ————————————————————————————————————————
             case EventRewardType.AttackTrickDamageBonus:
                 GameManager.AddSteleAttackTrickDamageBonus(reward.Amount);
-                return $"攻击性锦囊牌伤害 +{reward.Amount}（本局永久，当前总加成 +{GameManager.AttackTrickDamageBonus}）。";
+                return Localization.GetFmt("event.reward.attack_trick_bonus_fmt", reward.Amount, GameManager.AttackTrickDamageBonus);
 
             case EventRewardType.RunKillDamageBonus:
                 GameManager.AddRunKillDamageBonus(reward.Amount);
-                return $"所有杀系伤害 +{reward.Amount}（本局永久，当前总加成 +{GameManager.RunKillDamageBonus}）。";
+                return Localization.GetFmt("event.reward.kill_bonus_fmt", reward.Amount, GameManager.RunKillDamageBonus);
 
             case EventRewardType.MaxHpPercentWithCurrentSync:
             {
                 var bonus = GameManager.AddMaxHpByPercentWithCurrentSync(reward.Amount);
-                return $"生命之泉生效：最大生命提升{reward.Amount}%，并同步恢复{bonus}点生命。";
+                return Localization.GetFmt("event.reward.life_spring_fmt", reward.Amount, bonus);
             }
 
             case EventRewardType.SteleBloodPriceRandom:
             {
                 // 50%：最大生命 +20 / 当前生命 +20；50%：所有杀系伤害 +5。
-                var prefix = "石碑涌出了黑色液体。\n它包裹了你的全身。\n你似乎失去了什么。又似乎获得了什么。\n\n";
+                var prefix = Localization.Get("event.reward.stele_blood_prefix");
                 if (Random.Next(2) == 0)
                 {
                     GameManager.AddMaxHp(20);
                     GameManager.AddCurrentHp(20);
-                    return prefix + "石碑赐予了生命之力：最大生命 +20，当前生命 +20。";
+                    return prefix + Localization.Get("event.reward.stele_blood_hp");
                 }
                 else
                 {
                     GameManager.AddSteleKillDamageBonus(5);
-                    return prefix + $"石碑赋予了战斗之力：所有杀系伤害 +5（本局永久，当前总加成 +{GameManager.RunKillDamageBonus}）。";
+                    return prefix + Localization.GetFmt("event.reward.stele_blood_damage_fmt", GameManager.RunKillDamageBonus);
                 }
             }
 
             case EventRewardType.DefenseChipCount:
                 RewardManager.Execute(new RewardSequence().Add(new AddChipRewardAction(RewardChipType.Defense)));
-                return $"防御芯片安装完毕（共 {GameManager.DefenseChipCount} 个）。";
+                return Localization.GetFmt("event.reward.defense_chip_fmt", GameManager.DefenseChipCount);
 
             case EventRewardType.AttackChipInstall:
                 RewardManager.Execute(new RewardSequence().Add(new AddChipRewardAction(RewardChipType.Attack)));
-                return $"攻击芯片安装完毕（共 {GameManager.AttackChipCount} 个，杀系伤害总加成 +{GameManager.RunKillDamageBonus}）。";
+                return Localization.GetFmt("event.reward.attack_chip_fmt", GameManager.AttackChipCount, GameManager.RunKillDamageBonus);
 
             case EventRewardType.KnowledgeChipInstall:
                 RewardManager.Execute(new RewardSequence().Add(new AddChipRewardAction(RewardChipType.Knowledge)));
-                return $"知识芯片安装完毕（共 {GameManager.KnowledgeChipCount} 个，锦囊伤害总加成 +{GameManager.AttackTrickDamageBonus}）。";
+                return Localization.GetFmt("event.reward.knowledge_chip_fmt", GameManager.KnowledgeChipCount, GameManager.AttackTrickDamageBonus);
 
             case EventRewardType.FutureRustWeaponUpgrade:
             {
@@ -1334,8 +1418,9 @@ public static class EventManager
                     return null;
                 }
 
-                return "你的装备在石碑上不断摩擦。\n锈迹逐渐脱落。\n它们似乎恢复了原本的样子。\n\n" +
-                       string.Join("、", upgradedNames.ConvertAll(n => $"【{n}】"));
+                return Localization.GetFmt(
+                    "event.reward.rust_upgrade_fmt",
+                    string.Join(Localization.Get("common.list_separator"), upgradedNames.ConvertAll(n => $"【{n}】")));
             }
 
             case EventRewardType.SetChapterRoute:
@@ -1376,7 +1461,7 @@ public static class EventManager
 
             case EventRewardType.MaxPowerBonus:
                 GameManager.AddMaxPowerBonus(reward.Amount);
-                return $"最大电量永久+{reward.Amount}（当前电量：{GameManager.Power}/{GameManager.MaxPower}）。";
+                return Localization.GetFmt("event.reward.max_power_fmt", reward.Amount, GameManager.Power, GameManager.MaxPower);
 
             case EventRewardType.FreeWineRevive:
                 GameManager.GrantFreeWineRevive();
@@ -1400,20 +1485,20 @@ public static class EventManager
                 if (healed > 0)
                 {
                     GameManager.AddCurrentHp(healed);
-                    return $"回复至满血（+{healed}点生命）。";
+                    return Localization.GetFmt("event.reward.full_heal_fmt", healed);
                 }
 
-                return "生命已满，无需恢复。";
+                return Localization.Get("event.reward.already_full_hp");
             }
 
             case EventRewardType.NanmanDamageMultiply:
                 GameManager.AddNanmanDamageBonus(reward.Amount);
-                return $"你的南蛮入侵伤害提升为原来的{GameManager.NanmanDamageMultiplier:0.##}倍（本局永久）。";
+                return Localization.GetFmt("event.reward.nanman_multiplier_fmt", GameManager.NanmanDamageMultiplier);
 
             case EventRewardType.EvolveManzuToManzuWang:
                 GameManager.RemoveAcquiredSkill(SkillIds.Manzu);
                 GameManager.AddAcquiredSkill(SkillIds.ManzuWang);
-                return "蛮族技能进化：【蛮族】→【蛮族之王】。\n南蛮入侵伤害 ×2，每次命中敌人回复5生命和0.5费。";
+                return Localization.Get("event.reward.manzu_evolved");
 
             case EventRewardType.StartManZuCampBattle:
                 GameManager.BeginManZuCampBattle();
@@ -1423,11 +1508,11 @@ public static class EventManager
                 if (Random.Next(2) == 0)
                 {
                     GameManager.AddGold(200);
-                    return "你成功偷走了蛮族的物资，获得200金币。";
+                    return Localization.Get("event.reward.manzu_theft_success");
                 }
 
                 GameManager.BeginManZuCampBattle();
-                return "你被发现了！蛮族士兵将你包围——决斗开始！";
+                return Localization.Get("event.reward.manzu_theft_battle");
 
             case EventRewardType.DestroyAllEquipmentAndGold:
             {
@@ -1435,8 +1520,10 @@ public static class EventManager
                 var goldLost = GameManager.Gold;
                 GameManager.AddGold(-goldLost);
                 AncientForgeEventLog.Log($"[古蜀铸炉] 献祭装备：销毁 {names.Count} 件装备，清空金币 {goldLost}。");
-                var nameStr = names.Count > 0 ? string.Join("、", names.ConvertAll(n => $"【{n}】")) : "（无装备）";
-                return $"古炉的火焰将一切吞噬。\n焚毁：{nameStr}\n金币全部耗尽。";
+                var nameStr = names.Count > 0
+                    ? string.Join(Localization.Get("common.list_separator"), names.ConvertAll(n => $"【{n}】"))
+                    : Localization.Get("event.reward.no_equipment_parenthetical");
+                return Localization.GetFmt("event.reward.forge_destroy_all_fmt", nameStr);
             }
 
             case EventRewardType.LoseCurrentHpPercent:
@@ -1444,10 +1531,10 @@ public static class EventManager
                 var loss = GameManager.CurrentHP * reward.Amount / 100;
                 loss = Math.Max(1, loss);
                 loss = Math.Min(loss, GameManager.CurrentHP - 1);
-                if (loss <= 0) return "你的生命值已岌岌可危，古炉无法汲取更多力量。";
+                if (loss <= 0) return Localization.Get("event.reward.forge_hp_too_low");
                 GameManager.AddCurrentHp(-loss);
                 AncientForgeEventLog.Log($"[古蜀铸炉] 献祭灵魂：失去 {loss} 点生命（{reward.Amount}% 当前HP）。");
-                return $"古炉汲取了你的生命精华。\n你失去了 {loss} 点生命。";
+                return Localization.GetFmt("event.reward.forge_hp_loss_fmt", loss);
             }
 
             case EventRewardType.SetCurrentHpToOneAndLoseMaxHpPercent:
@@ -1465,7 +1552,7 @@ public static class EventManager
                 GameManager.SetCurrentHp(1);
                 AncientForgeEventLog.Log(
                     $"[古蜀铸炉] 献祭灵魂：当前生命设为1，最大生命 {previousMaxHp}->{GameManager.MaxHP}（-{reward.Amount}%）。");
-                return $"古炉吞没了你的灵魂。\n当前生命降至1点，最大生命降低 {maxHpLoss} 点。";
+                return Localization.GetFmt("event.reward.forge_soul_loss_fmt", maxHpLoss);
             }
 
             case EventRewardType.ChooseOneLegendaryEquipment:
@@ -1509,17 +1596,17 @@ public static class EventManager
             {
                 var total = GameManager.ClearAllChips();
                 return total > 0
-                    ? $"回收了 {total} 个记忆芯片（攻击/防御/知识计数已清零）。"
-                    : "芯片栏为空，无芯片可回收。";
+                    ? Localization.GetFmt("event.reward.chips_recycled_fmt", total)
+                    : Localization.Get("event.reward.no_chips_to_recycle");
             }
 
             case EventRewardType.RandomRareSkill:
             {
                 var skillId = GameManager.GetRandomRareSkillId();
-                if (skillId == null) return "没有可获得的稀有技能。";
+                if (skillId == null) return Localization.Get("event.reward.no_rare_skill");
                 GameManager.AddAcquiredSkill(skillId);
                 var skill = SkillDatabase.GetSkill(skillId);
-                return $"获得技能：【{(skill is null ? skillId : Localization.GetName(skill))}】";
+                return Localization.GetFmt("reward.skill_gain_fmt", skill is null ? skillId : Localization.GetName(skill));
             }
 
             case EventRewardType.ChooseOneChipTwice:
@@ -1529,7 +1616,7 @@ public static class EventManager
 
             case EventRewardType.EvolveKejiToKejiUnlimited:
                 GameManager.AddAcquiredSkill(SkillIds.KejiUnlimited);
-                return "克己升级：【克己·无限制协议】已激活。\n费用上限→20，每1费+10%伤害，免疫顺手牵羊。";
+                return Localization.Get("event.reward.keji_evolved");
 
             case EventRewardType.StartQiXingTanBattle:
                 GameManager.BeginQiXingTanBattle();
@@ -1538,7 +1625,7 @@ public static class EventManager
             case EventRewardType.EvolveGuanxingToTianJi:
                 GameManager.RemoveAcquiredSkill(SkillIds.Guanxing);
                 GameManager.AddAcquiredSkill(SkillIds.TianJi);
-                return "观星升级：【天机】已激活。\n使用观星时立即获得1费（仍正常扣费）。";
+                return Localization.Get("event.reward.guanxing_evolved");
 
             case EventRewardType.SacrificeOneEquipmentForUpgrade:
                 return null;
@@ -1564,15 +1651,15 @@ public static class EventManager
                     if (!isAccessory) continue;
                     candidates.Add(def);
                 }
-                if (candidates.Count == 0) return "没有可获得的史诗饰品。";
+                if (candidates.Count == 0) return Localization.Get("event.reward.no_epic_accessory");
                 var chosen = candidates[Random.Next(candidates.Count)];
                 GameManager.AddEquipment(chosen.Id);
-                return $"获得史诗饰品：【{Localization.GetName(chosen)}】。";
+                return Localization.GetFmt("event.reward.epic_accessory_fmt", Localization.GetName(chosen));
             }
 
             case EventRewardType.WineDamageMultiplierBonus:
                 GameManager.AddWineDamageMultiplierBonus(0.5);
-                return $"酒的增伤倍率永久增加0.5倍（当前额外 +{GameManager.WineDamageMultiplierBonus:0.#}）。";
+                return Localization.GetFmt("event.reward.wine_bonus_fmt", GameManager.WineDamageMultiplierBonus);
 
             case EventRewardType.SoulPossession:
                 return GameManager.ApplySoulPossession();
@@ -1588,7 +1675,7 @@ public static class EventManager
 
             case EventRewardType.PeachBaseHealBonus:
                 GameManager.AddPeachBaseHealBonus(reward.Amount);
-                return $"桃基础回复量永久 +{reward.Amount}（当前基础回复 {GameManager.PeachBaseHealAmount}）。";
+                return Localization.GetFmt("event.reward.peach_heal_bonus_fmt", reward.Amount, GameManager.PeachBaseHealAmount);
 
             case EventRewardType.StartChasingPursuersBattle:
                 GameManager.BeginChasingPursuersBattle();
@@ -1598,14 +1685,14 @@ public static class EventManager
                 if (Random.Next(2) == 0)
                 {
                     GameManager.AddGold(50);
-                    return "你巧妙地制造了混乱，成功甩开了追捕者的视线。\n保留了全部遗物，获得50金币。";
+                    return Localization.Get("event.reward.pursuer_diversion_success");
                 }
                 else
                 {
                     RemoveEquipmentIfOwned(EquipmentIds.ForgottenStone);
                     RemoveEquipmentIfOwned(EquipmentIds.StatueCore);
                     GameManager.AddCurrentHp(-15);
-                    return "调虎离山的计策被识破了。\n追捕者夺回了属于他们的遗物，你也在混战中受了伤（-15点生命）。";
+                    return Localization.Get("event.reward.pursuer_diversion_failure");
                 }
 
             case EventRewardType.PowerGain:
@@ -1649,7 +1736,7 @@ public static class EventManager
 
         if (sacrificeCandidates.Count == 0)
         {
-            return "你的背包中没有可以提升品质的稀有或史诗装备。\n鼠王略显失望，但还是将金币收下了。";
+            return Localization.Get("event.reward.rat_king.no_sacrifice");
         }
 
         // 随机尝试所有可献礼装备。某一件没有升级候选时继续检查其它装备，
@@ -1687,10 +1774,14 @@ public static class EventManager
             var sacrificedName = Localization.GetName(sacrificed.Definition);
             var upgradedName = Localization.GetName(added.Definition);
             var rarityName = Localization.GetRarityName(nextRarity);
-            return $"鼠王满意地接受了你的礼物。\n【{sacrificedName}】被摧毁。\n获得{rarityName}装备：【{upgradedName}】。";
+            return Localization.GetFmt(
+                "event.reward.rat_king.success_fmt",
+                sacrificedName,
+                rarityName,
+                upgradedName);
         }
 
-        return "没有可获得的高一品质装备。\n原装备未被摧毁。";
+        return Localization.Get("event.reward.rat_king.no_upgrade");
     }
 
     private static string FormatEquipmentRarity(EquipmentRarity rarity)

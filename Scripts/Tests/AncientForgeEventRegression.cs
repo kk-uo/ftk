@@ -38,6 +38,7 @@ public partial class AncientForgeEventRegression : Node
         {
             Localization.Initialize();
             TestLifeSpringGuDingDaoUpgrade();
+            TestLifeSpringSourceRewardsSpringEssence();
             TestAncientForgeMetadata();
             TestSoulSacrificeSettlement();
             TestZhaoYunHiddenUpgrade();
@@ -73,6 +74,20 @@ public partial class AncientForgeEventRegression : Node
         var upgraded = InventoryManager.GetAllOwned()
             .Single(item => item.Definition.Id == EquipmentIds.GuDingDao);
         Assert(upgraded.EquippedSlot == EquipmentSlot.Weapon, "泉水升级后没有保留武器槽位");
+    }
+
+    /// <summary>生命之泉第三项必须真正写入背包，而不是旧版错误发放粮草。</summary>
+    private void TestLifeSpringSourceRewardsSpringEssence()
+    {
+        ResetRun(CharacterIds.XuSheng);
+        var eventData = GetEvent("life_spring");
+        var option = eventData.Options[2];
+        var forageBefore = GameManager.Forage;
+
+        Assert(EventManager.TryResolveOption(eventData, option, out _), "拿取泉水之源无法结算");
+        Assert(RunBuffManager.CountStacks(RunBuffIds.Curse) == 2, "拿取泉水之源没有给予2层诅咒");
+        Assert(GameManager.OwnsEquipment(EquipmentIds.SpringEssence), "拿取泉水之源没有获得泉水精华");
+        Assert(GameManager.Forage == forageBefore, "拿取泉水之源不应再错误获得粮草");
     }
 
     private void TestAncientForgeMetadata()

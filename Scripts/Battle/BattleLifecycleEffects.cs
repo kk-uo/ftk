@@ -130,7 +130,7 @@ public sealed class EquipmentBattlePrePhaseEffect : IBattleEffect
 
 						enemy.AddFerocityLayers(1);
 						enemy.RuntimeStates["blood_moon_persistent_ferocity"] = true;
-						context.RoundResult.AddLine($"{enemy.DisplayName}受到【血红之月】影响：获得不会衰减的凶残。");
+						context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.blood_moon_fmt", enemy.DisplayName));
 						context.AddTriggerLog("[血红之月]");
 						context.AddTriggerLog($"{enemy.DisplayName}获得永久凶残。");
 					}
@@ -141,7 +141,7 @@ public sealed class EquipmentBattlePrePhaseEffect : IBattleEffect
 			if (iceArmorCount > 0)
 			{
 				context.Player.GainMana(iceArmorCount * 7);
-				context.RoundResult.AddLine($"冰蓝装甲触发：战斗开始获得{iceArmorCount * 7}费。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.ice_armor_mana_fmt", string.Empty, iceArmorCount * 7));
 				context.AddTriggerLog($"[Equipment] 冰蓝装甲×{iceArmorCount}：战斗开始 +{iceArmorCount * 7}费。");
 			}
 
@@ -149,7 +149,7 @@ public sealed class EquipmentBattlePrePhaseEffect : IBattleEffect
 			if (GameManager.HasEquipment(EquipmentIds.BarbarianTooth))
 			{
 				context.Player.AddFerocityLayers(3);
-				context.RoundResult.AddLine("蛮族的牙齿：战斗开始获得3层【凶残】（杀系伤害×1.5，每回合结束-1层）。");
+				context.RoundResult.AddLine(Localization.Get("battle.lifecycle.barbarian_tooth"));
 				context.AddTriggerLog("[Equipment] 蛮族的牙齿：+3层凶残。");
 			}
 
@@ -163,7 +163,7 @@ public sealed class EquipmentBattlePrePhaseEffect : IBattleEffect
 					var count = enemy.CountEquipment(EquipmentIds.IceBlueArmor);
 					if (count <= 0) continue;
 					enemy.GainMana(count * 7);
-					context.RoundResult.AddLine($"{enemy.DisplayName}冰蓝装甲触发：战斗开始获得{count * 7}费。");
+					context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.ice_armor_mana_fmt", enemy.DisplayName, count * 7));
 					context.AddTriggerLog($"[Equipment] {enemy.DisplayName}冰蓝装甲×{count}：+{count * 7}费。");
 				}
 			}
@@ -195,7 +195,7 @@ public sealed class RunBuffBattleStartManaEffect : IBattleEffect
 
 		context.Player.GainMana(bonus);
 		var sign = bonus > 0 ? "+" : string.Empty;
-		context.RoundResult.AddLine($"RunBuff：战斗开始费用{sign}{BattleRules.FormatMana(bonus)}。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.run_buff_mana_fmt", sign, BattleRules.FormatMana(bonus)));
 		context.AddTriggerLog($"[RunBuff/BattleStartMana] 玩家费用{sign}{BattleRules.FormatMana(bonus)}。");
 	}
 }
@@ -222,7 +222,7 @@ public sealed class ShuInitiativeManaEffect : IBattleEffect
 		if (FactionFateManager.CurrentFateId != FactionFateIds.ShuInitiative) return;
 
 		context.Player.GainMana(1);
-		context.RoundResult.AddLine("蜀·先机：战斗开始额外获得1费。");
+		context.RoundResult.AddLine(Localization.Get("battle.lifecycle.shu_initiative"));
 		context.AddTriggerLog("[FactionFate/ShuInitiative] 战斗开始 +1费。");
 	}
 }
@@ -301,7 +301,7 @@ public sealed class EquipmentBattlePostPhaseEffect : IBattleEffect
 		if (triggered > 0)
 		{
 			context.Player.GainMana(triggered);
-			context.RoundResult.AddLine($"虎符触发：第四个战斗回合结束后获得{triggered}费。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.tiger_tally_fmt", string.Empty, triggered));
 			context.AddTriggerLog("[Equipment]");
 			context.AddTriggerLog($"虎符：第4回合结束，获得{triggered}费。");
 		}
@@ -328,7 +328,7 @@ public sealed class EquipmentBattlePostPhaseEffect : IBattleEffect
 
 			enemy.RuntimeStates[tigerTallyKey] = true;
 			enemy.GainMana();
-			context.RoundResult.AddLine($"虎符触发：{enemy.DisplayName}第四个战斗回合结束后获得1费。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.tiger_tally_fmt", enemy.DisplayName, 1));
 			context.AddTriggerLog("[Equipment]");
 			context.AddTriggerLog($"虎符（敌方）：{enemy.DisplayName}第4回合结束获得1费。");
 		}
@@ -396,7 +396,7 @@ public sealed class TurnEndCleanupEffect : IBattleEffect
 		context.EnemyCounterDefenseActive.Clear();
 		if (context.Player.ClearExpiredLianyingFreeKill())
 		{
-			context.RoundResult.AddLine("连营未使用，状态已消失。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.skill_expired_fmt", Localization.Get("skill.lianying.name")));
 			context.AddTriggerLog("[连营]");
 			context.AddTriggerLog("Trigger: OnTurnEnd");
 			context.AddTriggerLog("Priority: Lowest");
@@ -410,7 +410,7 @@ public sealed class TurnEndCleanupEffect : IBattleEffect
 			{
 				if (enemy.ClearExpiredLianyingFreeKill())
 				{
-					context.RoundResult.AddLine($"{enemy.DisplayName}连营未使用，状态已消失。");
+					context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.enemy_skill_expired_fmt", enemy.DisplayName, Localization.Get("skill.lianying.name")));
 					context.AddTriggerLog("[连营]");
 					context.AddTriggerLog($"{enemy.DisplayName}未使用免费普通杀，连营状态消失。");
 				}
@@ -430,11 +430,11 @@ public sealed class TurnEndCleanupEffect : IBattleEffect
 		player.DecrementWeakness();
 		if (player.WeaknessLayers > 0)
 		{
-			context.RoundResult.AddLine($"{player.DisplayName}【虚弱】剩余{player.WeaknessLayers}回合。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.weakness_remaining_fmt", player.DisplayName, player.WeaknessLayers));
 		}
 		else
 		{
-			context.RoundResult.AddLine($"{player.DisplayName}【虚弱】已消失。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.lifecycle.weakness_expired_fmt", player.DisplayName));
 		}
 	}
 }

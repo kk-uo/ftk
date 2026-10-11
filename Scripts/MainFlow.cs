@@ -34,6 +34,7 @@ public partial class MainFlow : Control
     private readonly PackedScene _mainMenuScene = GD.Load<PackedScene>("res://Scenes/MainMenu.tscn");
     private readonly PackedScene _codexScene = GD.Load<PackedScene>("res://Scenes/Codex.tscn");
     private readonly PackedScene _characterSelectScene = GD.Load<PackedScene>("res://Scenes/CharacterSelect.tscn");
+    private readonly PackedScene _difficultySelectScene = GD.Load<PackedScene>("res://Scenes/DifficultySelect.tscn");
     private readonly PackedScene _mapScene = GD.Load<PackedScene>("res://Scenes/Map.tscn");
     private readonly PackedScene _battleScene = GD.Load<PackedScene>("res://Scenes/Battle.tscn");
     private readonly PackedScene _eventScene = GD.Load<PackedScene>("res://Scenes/Event.tscn");
@@ -48,9 +49,12 @@ public partial class MainFlow : Control
     private Label? _devModeLabel;
     private bool _transitioning;
     private bool _debugBattleSelection;
+    private string _pendingDifficultyCharacterId = string.Empty;
     private RewardData? _pendingRewardData;
     private BattleManager? _currentBattleManager;
     private Control? _suspendedRunScreen;
+    private readonly Dictionary<CanvasLayer, bool> _suspendedLayerVisibility = new();
+    private ProcessModeEnum _suspendedProcessMode = ProcessModeEnum.Inherit;
     private ConfirmationDialog? _suspendRunDialog;
     private DeveloperDebugPanel? _debugPanel;
     private bool _showTryMetaTutorialHintOnNextMenu;
@@ -154,6 +158,7 @@ public partial class MainFlow : Control
         TutorialIntegratedProgress.Initialize();
         FirstTimeHintManager.Initialize();
         CodexService.Initialize();
+        DifficultyManager.Initialize();
         BattleRules.ValidateCombatRelations();
         LocalizationValidator.RunIfDeveloperMode();
         _sceneHost = GetNode<Control>("SceneHost");
@@ -534,13 +539,27 @@ public partial class MainFlow : Control
         DiscardSuspendedRunReference();
         TutorialManager.ResetForNewRun();
         TutorialManager.StartCombatTutorial();
+        var formalTransitionStarted = false;
 
         var battle = _battleScene.Instantiate<BattleManager>();
         battle.ConfigureDebugMode(CharacterIds.ZhaoYun);
         battle.ReturnToMainMenuRequested += ShowMainMenu;
-        battle.GoToMapRequested += ShowMainMenu;
+        battle.GoToMapRequested += () =>
+        {
+            if (!formalTransitionStarted)
+            {
+                ShowMainMenu();
+            }
+        };
         battle.BattleFinished += playerWon =>
         {
+            // 教程步骤完成时由 TutorialOverlay 的专用信号切入正式 Run。旧战斗实例
+            // 随后若继续抛出 BattleFinished，也不能再把玩家送回主菜单。
+            if (formalTransitionStarted)
+            {
+                return;
+            }
+
             // 防止"手滑打错牌导致真的输掉训练假人"把玩家直接踢回主菜单、
             // 教程半途而废：真实败局改成重开整场教学战斗，而不是终止教程。
             // 教学保护（拦截致命伤害）已经取消，脚本化课程和综合练习环节的
@@ -551,15 +570,18 @@ public partial class MainFlow : Control
                 return;
             }
 
-            // 战斗教程完成后回到主菜单时，如果战斗外教程还没体验过，顺带提示一次
-            // （只是一句话的提示，复用既有 OnInitialEventQualityUpgradeTriggered
-            // 同款轻量 Toast 手法，不新增一整套弹窗系统）。
-            _showTryMetaTutorialHintOnNextMenu = TutorialProgress.IsCombatCompleted && !TutorialProgress.IsMetaCompleted;
+            // 正常情况下 TutorialOverlay 会在教程课程完成时先发出专用信号。
+            // 这里仅保留一个极端兜底，避免非教程状态的调试战斗卡在原界面。
             ShowMainMenu();
         };
 
         var overlay = new TutorialOverlay();
         overlay.ReturnToMenuRequested += ShowMainMenu;
+        overlay.CombatTutorialCompleted += () =>
+        {
+            formalTransitionStarted = true;
+            StartFormalRunAfterTutorial(CharacterIds.ZhaoYun);
+        };
         battle.AddChild(overlay);
 
         SwitchTo(battle);
@@ -613,7 +635,7 @@ public partial class MainFlow : Control
         ShowMainMenu();
     }
 
-    private async void OnCharacterChosen(string characterId)
+    private void OnCharacterChosen(string characterId)
     {
         if (_debugBattleSelection)
         {
@@ -627,20 +649,54 @@ public partial class MainFlow : Control
             return;
         }
 
+        // 教程使用完全隔离的无难度流程，不展示难度页面，也不触发任何难度内容。
+        if (IntegratedTutorialFlow.IsActive)
+        {
+            GameManager.SelectCharacter(characterId);
+            ShowIntegratedTutorialMap();
+            return;
+        }
+
+        ShowDifficultySelection(characterId);
+    }
+
+    private void ShowDifficultySelection(string characterId)
+    {
+        _pendingDifficultyCharacterId = characterId;
+        var difficultySelect = _difficultySelectScene.Instantiate<DifficultySelectController>();
+        difficultySelect.DifficultyChosen += OnDifficultyChosen;
+        difficultySelect.ReturnRequested += ReturnFromDifficultySelection;
+        SwitchTo(difficultySelect);
+    }
+
+    private void ReturnFromDifficultySelection()
+    {
+        _pendingDifficultyCharacterId = string.Empty;
+        var select = _characterSelectScene.Instantiate<CharacterSelectController>();
+        select.DebugModeSelection = false;
+        select.CharacterChosen += OnCharacterChosen;
+        select.ReturnToMenuRequested += OnCharacterSelectReturnToMenuRequested;
+        SwitchTo(select);
+    }
+
+    private async void OnDifficultyChosen(int difficultyValue)
+    {
+        if (string.IsNullOrWhiteSpace(_pendingDifficultyCharacterId)
+            || !System.Enum.IsDefined(typeof(DifficultyLevel), difficultyValue)
+            || !DifficultyManager.TrySelect((DifficultyLevel)difficultyValue))
+        {
+            return;
+        }
+
+        var characterId = _pendingDifficultyCharacterId;
+        _pendingDifficultyCharacterId = string.Empty;
         GameManager.SelectCharacter(characterId);
 
         // 先切到地图场景再播放揭示动画：老虎机是挂在 Main 根节点下的全屏 overlay，
         // 与 SceneHost 里的地图是两个独立节点，谁先谁后不影响 overlay 能否盖住地图；
         // 调整为先进地图再弹出，是为了匹配"选完角色→先看到地图→再跳出命运揭示"的
         // 演出节奏（此前是角色选择界面还没消失就弹出，观感是在选人画面里跳出）。
-        if (IntegratedTutorialFlow.IsActive)
-        {
-            ShowIntegratedTutorialMap();
-        }
-        else
-        {
-            ShowMap();
-        }
+        ShowMap();
 
         await PlayFactionFateRevealAnimation();
         await PlayPendingFactionDiceAnimation();
@@ -855,13 +911,43 @@ public partial class MainFlow : Control
         startButton.AddThemeFontSizeOverride("font_size", 22);
         startButton.Pressed += () =>
         {
-            IntegratedTutorialFlow.Complete();
-            GameManager.BuildDefaultMap();
-            ShowMap();
+            StartFormalRunAfterTutorial(GameManager.CurrentCharacterId);
         };
         vbox.AddChild(startButton);
 
         SwitchTo(root);
+    }
+
+    /// <summary>
+    /// 教程完成后不回主菜单，也不把教程奖励/地图/状态带入正式游戏。
+    /// 直接使用玩家在教程中选过的角色，开启一局干净的正式第一章 Run。
+    /// </summary>
+    private async void StartFormalRunAfterTutorial(string characterId)
+    {
+        if (string.IsNullOrWhiteSpace(characterId))
+        {
+            // 防御性回退：正常流程必定在教程选人后才会来到这里。
+            ShowMainMenu();
+            return;
+        }
+
+        if (IntegratedTutorialFlow.IsActive)
+        {
+            IntegratedTutorialFlow.Complete();
+        }
+        else
+        {
+            IntegratedTutorialFlow.Reset();
+        }
+        TutorialManager.ResetForNewRun();
+        GameManager.BeginNewRun();
+        GameManager.SelectCharacter(characterId);
+
+        // SelectCharacter 已按正式流程生成第一章、章节变种及阵营命运；直接进入地图，
+        // 保持和普通“开始游戏”一致，而不再返回主菜单。
+        ShowMap();
+        await PlayFactionFateRevealAnimation();
+        await PlayPendingFactionDiceAnimation();
     }
 
     private void ShowMap()
@@ -1127,6 +1213,19 @@ public partial class MainFlow : Control
         {
             GameManager.SetCurrentNode(nodeId);
             ShowInitialEvent();
+            return;
+        }
+
+        // 难度6：第三章主Boss战前固定进行一次稀有技能三选一。必须放在节点扣费与
+        // SetCurrentNode 之前；选择完成后重新进入本方法，此时一次性标记已消费，
+        // 才继续原本的Boss进入流程。
+        var isChapterThreeMainBoss = GameManager.CurrentChapter == 3
+            && node.Type == MapNodeType.Boss
+            && !node.Id.StartsWith("boss_extra_ch", System.StringComparison.Ordinal);
+        if (isChapterThreeMainBoss
+            && GameManager.TryConsumeDifficultySixChapterThreeSkillChoice())
+        {
+            ShowDifficultySixChapterThreeSkillPick(nodeId);
             return;
         }
 
@@ -1716,10 +1815,14 @@ public partial class MainFlow : Control
     {
         if (GameManager.IsFinalChapter)
         {
+            var unlockedNextDifficulty = DifficultyManager.RecordCurrentDifficultyCleared();
             var victoryView = new ChapterCompleteController
             {
                 TitleText = Localization.Get("run.victory.title"),
-                SubtitleText = string.Format(Localization.Get("chapter.clear_fmt"), GameManager.GetChapterDisplayName(GameManager.CurrentChapter)),
+                SubtitleText = string.Format(Localization.Get("chapter.clear_fmt"), GameManager.GetChapterDisplayName(GameManager.CurrentChapter))
+                    + (unlockedNextDifficulty
+                        ? "\n" + Localization.GetFmt("difficulty.unlocked_next", (int)DifficultyManager.MaxUnlockedDifficulty)
+                        : string.Empty),
                 PrimaryButtonText = Localization.Get("ui.main_menu")
             };
             victoryView.PrimaryAction += OnReturnToMenuFromVictory;
@@ -1804,6 +1907,60 @@ public partial class MainFlow : Control
                 }
 
                 ShowMap();
+            });
+    }
+
+    private void ShowDifficultySixChapterThreeSkillPick(string bossNodeId)
+    {
+        var choices = new SkillChoiceProvider
+        {
+            Count = 3,
+            Rarities = new[] { SkillRarity.Rare },
+            IncludeBossSkills = false,
+            IncludeOtherCharacterExclusiveSkills = true
+        }.CreateChoices();
+
+        if (choices.Count == 0)
+        {
+            OnNodeSelected(bossNodeId);
+            return;
+        }
+
+        ShowChoicePanel(
+            new ChoiceRequest
+            {
+                Title = Localization.Get("difficulty.6.skill_choice.title"),
+                Description = Localization.Get("difficulty.6.skill_choice.desc"),
+                Footer = Localization.Get("mainflow.choice_footer"),
+                AllowCancel = false,
+                Options = choices,
+                RerollOption = FactionFateManager.CurrentFateId == FactionFateIds.Reroll
+                    ? (current, allIds) =>
+                    {
+                        FactionFateManager.TryRerollChoiceOption(
+                            current,
+                            allIds,
+                            exclude => new SkillChoiceProvider
+                            {
+                                Count = 1,
+                                Rarities = new[] { SkillRarity.Rare },
+                                IncludeBossSkills = false,
+                                IncludeOtherCharacterExclusiveSkills = true,
+                                ExcludedSkillIds = exclude
+                            }.CreateChoices().FirstOrDefault(),
+                            out var replacement);
+                        return replacement;
+                    }
+                    : null
+            },
+            result =>
+            {
+                if (!result.Cancelled && !string.IsNullOrWhiteSpace(result.Id))
+                {
+                    GameManager.AddAcquiredSkill(result.Id);
+                }
+
+                OnNodeSelected(bossNodeId);
             });
     }
 
@@ -2541,6 +2698,7 @@ public partial class MainFlow : Control
         }
 
         _suspendedRunScreen = activeScreen;
+        HideSuspendedScreenPresentation(activeScreen);
         activeScreen.Visible = false;
         activeScreen.ProcessMode = ProcessModeEnum.Disabled;
         _currentBattleManager = null;
@@ -2560,7 +2718,8 @@ public partial class MainFlow : Control
             menu.QueueFree();
         }
 
-        _suspendedRunScreen.ProcessMode = ProcessModeEnum.Inherit;
+        RestoreSuspendedScreenPresentation();
+        _suspendedRunScreen.ProcessMode = _suspendedProcessMode;
         _suspendedRunScreen.Visible = true;
         _currentBattleManager = _suspendedRunScreen as BattleManager;
         _suspendedRunScreen = null;
@@ -2569,6 +2728,39 @@ public partial class MainFlow : Control
     private void DiscardSuspendedRunReference()
     {
         // 新开局会通过 SwitchTo 统一释放旧界面；此处仅取消“继续游戏”的引用。
+        _suspendedLayerVisibility.Clear();
         _suspendedRunScreen = null;
+    }
+
+    private void HideSuspendedScreenPresentation(Control screen)
+    {
+        _suspendedProcessMode = screen.ProcessMode;
+        _suspendedLayerVisibility.Clear();
+        // CanvasLayer 不继承父 Control 的 Visible；保留每层原状态，避免继续时
+        // 把原本隐藏的骰子、技能演出等浮层也一并打开。
+        void HideLayers(Node parent)
+        {
+            foreach (var child in parent.GetChildren())
+            {
+                if (child is CanvasLayer layer)
+                {
+                    _suspendedLayerVisibility[layer] = layer.Visible;
+                    layer.Hide();
+                }
+                HideLayers(child);
+            }
+        }
+        HideLayers(screen);
+        TooltipManager.Hide();
+        TooltipPresenter.Hide();
+    }
+
+    private void RestoreSuspendedScreenPresentation()
+    {
+        foreach (var (layer, visible) in _suspendedLayerVisibility)
+        {
+            if (IsInstanceValid(layer)) layer.Visible = visible;
+        }
+        _suspendedLayerVisibility.Clear();
     }
 }

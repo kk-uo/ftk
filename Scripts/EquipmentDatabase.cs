@@ -373,17 +373,17 @@ public static class EquipmentDatabase
         [EquipmentIds.HanXueBaoMa] = new EquipmentDefinition(
             EquipmentIds.HanXueBaoMa,
             "汗血宝马",
-            "战斗开始时，获得20点临时生命值。",
+            "你的无懈可击变为0费。",
             new[] { EquipmentType.Vehicle, EquipmentType.Buff },
-            EquipmentRarity.Rare,
+            EquipmentRarity.Epic,
             new[]
             {
-                new EquipmentEffect("战斗开始时，获得20点临时生命值。", 300)
+                new EquipmentEffect("你的无懈可击变为0费。", 600)
             },
             EquipmentAcquisitionMethod.Shop,
             System.Array.Empty<string>(),
-            new[] { "vehicle", "rare", "temp_hp", "battle_start" },
-            300,
+            new[] { "vehicle", "epic", "unassailable", "zero_cost", "shop" },
+            600,
             nameKey: "equipment.vehicle_han_xue_bao_ma.name",
             descriptionKey: "equipment.vehicle_han_xue_bao_ma.desc",
             assetCode: "EQ40006"),
@@ -395,12 +395,12 @@ public static class EquipmentDatabase
         [EquipmentIds.FirePatternSilverSpear] = new EquipmentDefinition(
             EquipmentIds.FirePatternSilverSpear,
             "火纹银枪",
-            "火杀费用变为1（原为2）。",
+            "火杀费用变为1；火雷杀费用减1。",
             new[] { EquipmentType.Weapon, EquipmentType.Buff },
             EquipmentRarity.Epic,
             new[]
             {
-                new EquipmentEffect("火杀费用变为1。", 300)
+                new EquipmentEffect("火杀费用变为1；火雷杀费用减1。", 300)
             },
             EquipmentAcquisitionMethod.Shop,
             System.Array.Empty<string>(),
@@ -518,16 +518,16 @@ public static class EquipmentDatabase
         [EquipmentIds.SoulStone] = new EquipmentDefinition(
             EquipmentIds.SoulStone,
             "灵魂石",
-            "一块散发着神秘光芒的石头。\n出售时：除获得金币外，额外随机获得一枚芯片（攻击/防护/知识各33%）。",
+            "用来磨刀最好不过了。\n出售时：除获得金币外，额外随机获得一枚芯片；有10%概率随机为技能芯片或扩容芯片。",
             new[] { EquipmentType.Buff, EquipmentType.Accessory },
             EquipmentRarity.Rare,
             new[]
             {
-                new EquipmentEffect("出售时：额外随机获得一枚芯片（攻击/防护/知识各33%）。", 150)
+                new EquipmentEffect("出售时：额外随机获得一枚芯片；有10%概率随机为技能芯片或扩容芯片。", 150)
             },
-            EquipmentAcquisitionMethod.Reward,
+            EquipmentAcquisitionMethod.Shop,
             System.Array.Empty<string>(),
-            new[] { "accessory", "on_sell", "chip" },
+            new[] { "accessory", "rare", "on_sell", "chip", "event", "shop" },
             150,
             nameKey: "equipment.soul_stone.name",
             descriptionKey: "equipment.soul_stone.desc",
@@ -714,12 +714,12 @@ public static class EquipmentDatabase
         [EquipmentIds.ThunderSpear] = new EquipmentDefinition(
             EquipmentIds.ThunderSpear,
             "雷矛",
-            "通体流窜着电，如何握住才是关键。\n雷杀费用降为1（原为2）。",
+            "通体流窜着电，如何握住才是关键。\n雷杀费用变为1；火雷杀费用减1。",
             new[] { EquipmentType.Weapon, EquipmentType.Buff },
             EquipmentRarity.Epic,
             new[]
             {
-                new EquipmentEffect("雷杀费用降为1。", 400)
+                new EquipmentEffect("雷杀费用变为1；火雷杀费用减1。", 400)
             },
             EquipmentAcquisitionMethod.Shop,
             System.Array.Empty<string>(),
@@ -756,13 +756,13 @@ public static class EquipmentDatabase
         [EquipmentIds.ClampExoskeleton] = new EquipmentDefinition(
             EquipmentIds.ClampExoskeleton,
             "钳制机械外骨骼",
-            "坚硬的外骨骼，可以在战斗中帮助控制敌人。\n获得50最大生命。\n当装备者生命值首次跌至最大生命值的一半及以下时触发：立刻对敌方使用一次顺手牵羊，获得酒BUFF×1，进入修复状态（下一回合开始时恢复至满生命值）。每场战斗仅触发一次。",
+            "坚硬的外骨骼，可以在战斗中帮助控制敌人。\n获得80最大生命。\n当装备者生命值首次跌至最大生命值的一半及以下时触发：不会立即死亡，本回合无敌；立刻对敌方使用一次顺手牵羊，并在下回合开始时恢复至满生命值。每场战斗仅触发一次。",
             new[] { EquipmentType.Buff, EquipmentType.Armor, EquipmentType.Defense },
             EquipmentRarity.Legendary,
             new[]
             {
-                new EquipmentEffect("获得50最大生命。", 300),
-                new EquipmentEffect("首次生命值跌至50%及以下时：顺手牵羊+酒BUFF×1+修复状态（下回合满血）。仅触发一次。", 800)
+                new EquipmentEffect("获得80最大生命。", 300),
+                new EquipmentEffect("首次生命值跌至50%及以下时：不会立即死亡+本回合无敌+顺手牵羊+修复状态（下回合满血）。仅触发一次。", 800)
             },
             EquipmentAcquisitionMethod.Unknown,
             System.Array.Empty<string>(),
@@ -1078,13 +1078,13 @@ public static class EquipmentDatabase
         [EquipmentIds.ChiTu] = new EquipmentDefinition(
             EquipmentIds.ChiTu,
             "赤兔",
-            "提供极强的首回合爆发能力。\n吕布装备后效果进一步强化。",
+            "第一回合出招时，额外视为打出一张普通杀；首次出招造成的杀系伤害翻倍。\n若使用者为吕布，【无双】的伤害倍率提升至×3。",
             new[] { EquipmentType.Vehicle, EquipmentType.Buff },
             EquipmentRarity.Epic,
             new[]
             {
-                new EquipmentEffect("战斗第一回合，自动视为额外打出一张普通杀。", 400),
-                new EquipmentEffect("第一回合所有杀系伤害×2。", 450),
+                new EquipmentEffect("战斗第一回合出招时，自动视为额外打出一张普通杀。", 400),
+                new EquipmentEffect("第一回合首次出招造成的所有杀系伤害×2。", 450),
                 new EquipmentEffect("若角色为吕布：【无双】从×2升级为×3。", 500)
             },
             EquipmentAcquisitionMethod.Shop,

@@ -56,7 +56,11 @@ public partial class MapExplorationView : Node2D
     private const float NodeSpacing = 320f;
     private const float NodeZigzagY = 140f;
     private const string DefaultMapBackgroundTexturePath = "res://Assets/Backgrounds/Map/bg_map_city_ruins.png";
-    private const string ChapterTwoMapBackgroundTexturePath = "res://Assets/Backgrounds/Map/bg_map_chapter2_city.png";
+    private const string ChapterOneMapBackgroundTexturePath = "res://Assets/Backgrounds/Map/bg_map_chapter1_ruined_frontier.png";
+    private const string ChapterTwoCityMapBackgroundTexturePath = "res://Assets/Backgrounds/Map/bg_map_chapter2_city_route.png";
+    private const string ChapterTwoSewerMapBackgroundTexturePath = "res://Assets/Backgrounds/Map/bg_map_chapter2_sewer_route.png";
+    private const string ChapterThreeImperialMapBackgroundTexturePath = "res://Assets/Backgrounds/Map/bg_map_chapter3_imperial_route.png";
+    private const string ChapterFourAbyssMapBackgroundTexturePath = "res://Assets/Backgrounds/Map/bg_map_chapter4_abyss_route.png";
     private bool _nodeSelectionQueued;
 
     public override void _Ready()
@@ -94,6 +98,7 @@ public partial class MapExplorationView : Node2D
         {
             Name = "MapBackgroundImage",
             Texture = texture,
+            TextureFilter = CanvasItem.TextureFilterEnum.Nearest,
             Centered = true,
             Position = new Vector2(ViewportWidth / 2f, ViewportHeight / 2f),
             Scale = new Vector2(coverScale, coverScale),
@@ -115,9 +120,15 @@ public partial class MapExplorationView : Node2D
 
     private static string GetMapBackgroundTexturePath()
     {
-        return GameManager.CurrentChapter == 2
-            ? ChapterTwoMapBackgroundTexturePath
-            : DefaultMapBackgroundTexturePath;
+        return GameManager.CurrentChapter switch
+        {
+            1 => ChapterOneMapBackgroundTexturePath,
+            2 when GameManager.CurrentChapterRoute == ChapterRoute.Sewer => ChapterTwoSewerMapBackgroundTexturePath,
+            2 => ChapterTwoCityMapBackgroundTexturePath,
+            3 => ChapterThreeImperialMapBackgroundTexturePath,
+            4 => ChapterFourAbyssMapBackgroundTexturePath,
+            _ => DefaultMapBackgroundTexturePath
+        };
     }
 
     private const float HorizontalMargin = 220f;

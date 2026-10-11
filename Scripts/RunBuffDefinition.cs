@@ -141,7 +141,7 @@ public static class RunBuffDatabase
             BuffId = RunBuffIds.BloodMoonDarkness,
             BuffName = "黑暗",
             NameKey = "runbuff.bloodmoondarkness.name",
-            Description = "血红之月：整个章节内，所有敌人最大生命值+30%。",
+            Description = "血红之月：第一章所有敌人最大生命值+30，并获得不会衰减的【凶残】。",
             DescriptionKey = "runbuff.bloodmoondarkness.desc",
             DefaultRemainingBattles = -1,
             Stackable = false,
@@ -152,8 +152,8 @@ public static class RunBuffDatabase
                 new()
                 {
                     Timing = RunBuffTriggerTiming.OnBattleStart,
-                    Type = RunBuffEffectType.EnemyMaxHpPercentBonus,
-                    Value = 0.30
+                    Type = RunBuffEffectType.EnemyMaxHpFlatBonus,
+                    Value = 30
                 }
             }
         },

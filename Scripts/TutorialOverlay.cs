@@ -12,6 +12,11 @@ public partial class TutorialOverlay : CanvasLayer
     /// </summary>
     public event Action? IntegratedFlowBattleWon;
 
+    /// <summary>
+    /// 基础战斗教程完成时触发。MainFlow 用它直接开启正式 Run，避免胜利后落回主菜单。
+    /// </summary>
+    public event Action? CombatTutorialCompleted;
+
     private Label? _stepLabel;
     private Label? _titleLabel;
     private RichTextLabel? _descLabel;
@@ -530,15 +535,7 @@ public partial class TutorialOverlay : CanvasLayer
             return;
         }
 
-        Visible = true;
-
-        // Hide the side instructional panel and show a centered popup instead
-        // — the completion call-to-action should be impossible to miss, not
-        // tucked into the thin 360px side panel used throughout the lesson.
-        if (_panel != null) _panel.Visible = false;
-        if (_completionPopup != null) _completionPopup.Visible = true;
-        if (_completionTitleLabel != null) _completionTitleLabel.Text = Localization.Get("tutorial.complete.title");
-        if (_completionDescLabel != null) _completionDescLabel.Text = Localization.Get("tutorial.complete.desc");
+        CombatTutorialCompleted?.Invoke();
     }
 
     private void OnRetryPressed()

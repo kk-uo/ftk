@@ -104,7 +104,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (!context.RoundResult.HasLines)
 		{
-			context.RoundResult.AddLine("无人受伤。");
+			context.RoundResult.AddLine(Localization.Get("battle.result.no_damage"));
 		}
 	}
 
@@ -130,7 +130,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 			}
 		}
 
-		context.RoundResult.AddLine("如影随行：有人受伤，全场费用重置为1。");
+		context.RoundResult.AddLine(Localization.Get("battle.result.ruying_reset"));
 		context.AddTriggerLog("[如影随行]");
 		context.AddTriggerLog("战斗动作结算后：全场费用设为1。");
 		context.ReportPlayerCharacterSkillTriggered(
@@ -145,7 +145,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 			&& player.GuanxingRecordedCardType.HasValue
 			&& action.Type == player.GuanxingRecordedCardType.Value)
 		{
-			context.RoundResult.AddLine($"观星重复：{BattleRules.GetCardName(action.Type)}费用免除。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.free_card_fmt", Localization.Get("skill.guanxing.name"), BattleRules.GetCardName(action.Type)));
 			return;
 		}
 
@@ -154,7 +154,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		if (FactionFateManager.CanUseShuFirstTrickFree(player, action.Type))
 		{
 			FactionFateManager.ConsumeShuFirstTrickFree(player);
-			context.RoundResult.AddLine($"蜀·奇策先发：{BattleRules.GetCardName(action.Type)}本场战斗首次使用免费。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.first_use_free_fmt", Localization.Get("factionfate.shu_fate_first_trick_free.name"), BattleRules.GetCardName(action.Type)));
 			context.AddTriggerLog("[FactionFate/ShuFirstTrickFree] 首张锦囊费用免除。");
 		}
 
@@ -164,7 +164,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 			var freeCount = Math.Min(action.Count, player.FreeWineUsesRemaining);
 			for (var i = 0; i < freeCount; i++)
 				player.ConsumeFreeWineUse();
-			context.RoundResult.AddLine($"【酒池】：{freeCount}张酒免费（剩余{player.FreeWineUsesRemaining}次）。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.jiuchi_free_fmt", freeCount, player.FreeWineUsesRemaining));
 			context.AddTriggerLog("[酒池]");
 			context.AddTriggerLog($"酒池：消耗{freeCount}次，剩余{player.FreeWineUsesRemaining}次。");
 			context.ReportPlayerCharacterSkillTriggered(
@@ -187,7 +187,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 			if (freeWineCount > 0)
 			{
-				context.RoundResult.AddLine($"酒囊生效：{player.DisplayName}本局第一张酒费用变为0。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.first_wine_free_fmt", player.DisplayName));
 				context.AddTriggerLog("[Equipment]");
 				context.AddTriggerLog("酒囊：本局第一张酒费用变为0。");
 			}
@@ -197,7 +197,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		{
 			cost = Math.Max(0, cost - BattleRules.GetCardCost(player, CardType.Kill));
 			player.ConsumeLianyingFreeKill();
-			context.RoundResult.AddLine($"{player.DisplayName}连营生效：第一张普通杀免费。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.first_kill_free_fmt", player.DisplayName, Localization.Get("skill.lianying.name")));
 			context.AddTriggerLog("[连营]");
 			context.AddTriggerLog("Trigger: OnBattlePhase");
 			context.AddTriggerLog("Priority: High");
@@ -212,7 +212,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		{
 			cost = Math.Max(0, cost - BattleRules.GetCardCost(player, CardType.Kill));
 			player.ConsumeWhiteHorseFreeKill();
-			context.RoundResult.AddLine($"白马触发：{player.DisplayName}本场战斗第一张普通杀费用变为0。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.first_kill_zero_fmt", GetEquipmentName(EquipmentIds.WhiteHorse), player.DisplayName));
 			context.AddTriggerLog("[Equipment]");
 			context.AddTriggerLog("白马：本场战斗第一张普通杀免费。");
 		}
@@ -222,7 +222,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		{
 			cost = 0;
 			player.ConsumeYingXiFirstUseFree();
-			context.RoundResult.AddLine($"{player.DisplayName}影袭触发：本场战斗第一次激活影袭费用为0。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.first_skill_free_fmt", player.DisplayName, Localization.Get("skill.yingxi.name")));
 			context.AddTriggerLog("[影袭]");
 			context.AddTriggerLog("影袭：本场战斗第一次激活免费。");
 		}
@@ -238,7 +238,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 				enemy.RuntimeStates["zhua_huang_free_attack_used"] = true;
 			}
 
-			context.RoundResult.AddLine($"爪黄飞电触发：{player.DisplayName}本场战斗第一张需要消耗费用的攻击牌不消耗费用。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.first_paid_attack_free_fmt", GetEquipmentName(EquipmentIds.ZhuaHuangFeiDian), player.DisplayName));
 			context.AddTriggerLog("[Equipment/爪黄飞电]");
 			context.AddTriggerLog($"{player.DisplayName}使用{BattleRules.GetCardName(action.Type)}，本次费用视为0。");
 		}
@@ -591,13 +591,17 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (playerAction.IsAttack && targetEntry.Action.IsSteal)
 		{
-			context.RoundResult.AddRelation(
-				$"{BattleRules.GetCardName(playerAction.Type)}克制{BattleRules.GetCardName(CardType.Steal)}");
+			context.RoundResult.AddRelation(Localization.GetFmt(
+				"battle.relation.counter_fmt",
+				BattleRules.GetCardName(playerAction.Type),
+				BattleRules.GetCardName(CardType.Steal)));
 		}
 		else if (playerAction.IsSteal && targetEntry.Action.IsAttack)
 		{
-			context.RoundResult.AddRelation(
-				$"{BattleRules.GetCardName(targetEntry.Action.Type)}克制{BattleRules.GetCardName(CardType.Steal)}");
+			context.RoundResult.AddRelation(Localization.GetFmt(
+				"battle.relation.counter_fmt",
+				BattleRules.GetCardName(targetEntry.Action.Type),
+				BattleRules.GetCardName(CardType.Steal)));
 		}
 	}
 
@@ -609,7 +613,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		}
 
 		var damage = (int)(enemy.MaxHealth * 0.4);
-		context.RoundResult.AddLine($"{enemy.DisplayName}【自爆】：对玩家造成{damage}点伤害（仅无懈、桃盾、酒盾可抵挡）。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.self_destruct_fmt", enemy.DisplayName, damage));
 		context.AddTriggerLog("[自爆]");
 		context.AddTriggerLog($"自爆伤害 = MaxHP({enemy.MaxHealth}) × 40% = {damage}");
 
@@ -634,7 +638,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		// 不再沿用旧版“爆炸后永久死亡”的处理。
 		enemy.RuntimeStates["zibao_pending"] = false;
 		enemy.RuntimeStates["zibao_triggered"] = true;
-		context.RoundResult.AddLine($"{enemy.DisplayName}释放自爆后仍保留1点生命。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.self_destruct_survive_fmt", enemy.DisplayName));
 		context.AddTriggerLog($"{enemy.DisplayName} 自爆已释放：解除待发状态，后续恢复普通AI行动。");
 	}
 
@@ -643,7 +647,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		if (context.GameOver) return;
 
 		var damage = (int)(enemy.MaxHealth * 0.4);
-		context.RoundResult.AddLine($"{enemy.DisplayName}【血债血偿】：释放濒死之力，对玩家造成{damage}点真实伤害（无视护甲、无视闪避、无视无懈）！");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.blood_debt_fmt", enemy.DisplayName, damage));
 		context.AddTriggerLog("[血债血偿]");
 		context.AddTriggerLog($"血债血偿伤害 = MaxHP({enemy.MaxHealth}) × 40% = {damage}");
 
@@ -652,7 +656,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		context.Player.TakeDamage(damage);
 		context.RecordDirectDamage(context.Player, damage, System.Math.Max(0, healthBefore - context.Player.Health), healthBefore, context.Player.Health,
 			new HealthChangeSource(HealthChangeSourceKind.Skill, "血债血偿", SkillIds.XueZhaiXueChou, enemy));
-		context.RoundResult.AddLine($"玩家受到{damage}点真实伤害（生命剩余{System.Math.Max(0, context.Player.Health)}/{context.Player.MaxHealth}）。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.true_damage_taken_fmt", Localization.Get("battle.player_name"), damage, System.Math.Max(0, context.Player.Health), context.Player.MaxHealth));
 		context.AddTriggerLog($"血债血偿：玩家 -{damage} → {context.Player.Health}/{context.Player.MaxHealth}");
 
 		if (context.Player.Health <= 0 && !context.Player.IsDead && !context.GameOver)
@@ -669,7 +673,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		// 血债血偿后强制死亡（绕过桃/酒复活流程，永久死亡）。
 		enemy.MarkDead();
 		enemy.ClearStatuses();
-		context.RoundResult.AddLine($"{enemy.DisplayName}血债血偿后死亡。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.blood_debt_death_fmt", enemy.DisplayName));
 
 		if (context.Encounter == null) return;
 
@@ -707,8 +711,8 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 			return false;
 		}
 
-		var sourceName = hasHejinJian ? "合金剑" : "锈剑";
-		context.RoundResult.AddLine($"{sourceName}触发：普通杀对所有敌人生效。");
+		var sourceName = GetEquipmentName(hasHejinJian ? EquipmentIds.HejinJian : EquipmentIds.RustSpear);
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.aoe_kill_fmt", sourceName));
 		context.AddTriggerLog($"[Equipment/{sourceName}]");
 		context.AddTriggerLog($"{sourceName}：本次普通杀分别与每个存活敌人的当前出牌结算。");
 		foreach (var enemyEntry in GetEnemyResolutionOrder(context))
@@ -722,6 +726,12 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		}
 
 		return true;
+	}
+
+	private static string GetEquipmentName(string equipmentId)
+	{
+		var definition = EquipmentDatabase.GetEquipment(equipmentId);
+		return definition is null ? equipmentId : Localization.GetName(definition);
 	}
 
 	private static void ResolveAreaKillAgainstEnemy(
@@ -852,7 +862,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 	{
 		if (playerAction.Type == enemyAction.Type)
 		{
-			context.RoundResult.AddRelation($"双方【{BattleRules.GetCardName(playerAction.Type)}】互相抵消");
+			context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.same_cancel_fmt", BattleRules.GetCardName(playerAction.Type)));
 			return;
 		}
 
@@ -861,7 +871,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		// 所有克制关系统一读取 BattleAction.Count，避免某个元素杀分支把整组攻击压缩为一次。
 		if (BattleRules.BeatsAttack(playerAction.Type, enemyAction.Type))
 		{
-			context.RoundResult.AddRelation($"{BattleRules.GetCardName(playerAction.Type)}克制{BattleRules.GetCardName(enemyAction.Type)}");
+			context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.counter_fmt", BattleRules.GetCardName(playerAction.Type), BattleRules.GetCardName(enemyAction.Type)));
 			if (playerCanDamageEnemy)
 			{
 				for (var i = 0; i < playerAction.Count && !context.GameOver; i++)
@@ -872,7 +882,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (BattleRules.BeatsAttack(enemyAction.Type, playerAction.Type))
 		{
-			context.RoundResult.AddRelation($"{BattleRules.GetCardName(enemyAction.Type)}克制{BattleRules.GetCardName(playerAction.Type)}");
+			context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.counter_fmt", BattleRules.GetCardName(enemyAction.Type), BattleRules.GetCardName(playerAction.Type)));
 			for (var i = 0; i < enemyAction.Count && !context.GameOver; i++)
 				DealAttackDamage(context, enemy, context.Player, enemyAction.Type);
 			return;
@@ -908,7 +918,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 	{
 		if (playerAttack == enemyAttack)
 		{
-			context.RoundResult.AddRelation($"双方【{BattleRules.GetCardName(playerAttack)}】平局");
+			context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.same_draw_fmt", BattleRules.GetCardName(playerAttack)));
 			return;
 		}
 
@@ -916,26 +926,26 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		if ((playerAttack == CardType.FireThunderKill && enemyAttack == CardType.ThunderKill)
 			|| (playerAttack == CardType.ThunderKill && enemyAttack == CardType.FireThunderKill))
 		{
-			context.RoundResult.AddRelation($"{BattleRules.GetCardName(playerAttack)}与{BattleRules.GetCardName(enemyAttack)}互相抵消");
+			context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.mutual_cancel_fmt", BattleRules.GetCardName(playerAttack), BattleRules.GetCardName(enemyAttack)));
 			return;
 		}
 
 		if (BattleRules.BeatsAttack(playerAttack, enemyAttack))
 		{
-			context.RoundResult.AddRelation($"{BattleRules.GetCardName(playerAttack)}克制{BattleRules.GetCardName(enemyAttack)}");
+			context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.counter_fmt", BattleRules.GetCardName(playerAttack), BattleRules.GetCardName(enemyAttack)));
 			DealAttackDamage(context, context.Player, enemy, playerAttack);
 			return;
 		}
 
 		if (BattleRules.BeatsAttack(enemyAttack, playerAttack))
 		{
-			context.RoundResult.AddRelation($"{BattleRules.GetCardName(enemyAttack)}克制{BattleRules.GetCardName(playerAttack)}");
+			context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.counter_fmt", BattleRules.GetCardName(enemyAttack), BattleRules.GetCardName(playerAttack)));
 			DealAttackDamage(context, enemy, context.Player, enemyAttack);
 			return;
 		}
 
 		// 双方互不克制：平局，均不受到伤害。
-		context.RoundResult.AddRelation($"双方【{BattleRules.GetCardName(playerAttack)}】与【{BattleRules.GetCardName(enemyAttack)}】互不影响");
+		context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.no_effect_fmt", BattleRules.GetCardName(playerAttack), BattleRules.GetCardName(enemyAttack)));
 	}
 
 	private static void ResolveAttackAgainstTarget(BattleContext context, Player attacker, Player target, BattleAction action)
@@ -958,7 +968,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		Player target,
 		BattleAction responseAction)
 	{
-		context.RoundResult.AddLine($"{attacker.DisplayName} 使用{attackerAction.DisplayName}。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_card_fmt", attacker.DisplayName, attackerAction.DisplayName));
 		var luoyiPiercesTargetCardDefense = attacker == context.Player && attacker.HasSkill(SkillIds.Luoyi);
 
 		// 必中杀与影袭杀都属于必中类反击：先命中万箭使用者，再结算箭雨。
@@ -968,8 +978,8 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		if (responseAction.Type is CardType.SureKill or CardType.ShadowKill)
 		{
 			var responseName = BattleRules.GetCardName(responseAction.Type);
-			context.RoundResult.AddRelation($"{responseName}克制万箭齐发");
-			context.RoundResult.AddLine($"{target.DisplayName} 使用{responseName}进行反制。");
+			context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.counter_fmt", responseName, BattleRules.GetCardName(CardType.ArrowBarrage)));
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_counter_fmt", target.DisplayName, responseName));
 			for (var i = 0; i < responseAction.Count && !context.GameOver; i++)
 			{
 				DealAttackDamage(context, target, attacker, responseAction.Type);
@@ -980,8 +990,8 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (!luoyiPiercesTargetCardDefense && HasCounterDefense(context, target))
 		{
-			context.RoundResult.AddLine($"{target.DisplayName} 使用无懈可击。");
-			context.RoundResult.AddLine($"{target.DisplayName} 成功防御。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_card_fmt", target.DisplayName, BattleRules.GetCardName(CardType.Unassailable)));
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.defended_fmt", target.DisplayName));
 			context.RoundResult.AddCounterDefenseBlock(target == context.Player, CardType.ArrowBarrage);
 			RaiseCancelledAttackEvent(context, attacker, target, CardType.ArrowBarrage);
 			return;
@@ -989,8 +999,8 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (!luoyiPiercesTargetCardDefense && HasDodgeDefense(context, target))
 		{
-			context.RoundResult.AddLine($"{target.DisplayName} 使用闪。");
-			context.RoundResult.AddLine($"{target.DisplayName} 成功闪避。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_card_fmt", target.DisplayName, BattleRules.GetCardName(CardType.Dodge)));
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.dodged_fmt", target.DisplayName));
 			context.RoundResult.AddPersistentDodgeBlock(target == context.Player, CardType.ArrowBarrage);
 			// 万箭齐发使用专属对撞分支，不会创建 DamageEvent，因此不会经过
 			// FullBlockRecordingEffect。这里补齐同一份结构化完全格挡结果，并生成
@@ -1003,7 +1013,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (responseAction.Type is CardType.Kill or CardType.PoisonKill or CardType.FireKill or CardType.ThunderKill or CardType.FireThunderKill)
 		{
-			context.RoundResult.AddLine($"{target.DisplayName} 使用{BattleRules.GetCardName(responseAction.Type)}进行反制。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_counter_fmt", target.DisplayName, BattleRules.GetCardName(responseAction.Type)));
 			// 叠加牌仍代表逐张打出。不能把火杀×2压缩为一次伤害，否则万箭齐发的
 			// 专属双方命中结算会与普通攻击对撞的 Count 语义不一致。
 			for (var i = 0; i < responseAction.Count && !context.GameOver; i++)
@@ -1017,7 +1027,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		// 冰杀响应万箭齐发：反制造成 10 点伤害，万箭使用者获得冰冻，自身承受万箭 10 点。
 		if (responseAction.Type == CardType.IceKill)
 		{
-			context.RoundResult.AddLine($"{target.DisplayName} 使用冰杀进行反制。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_counter_fmt", target.DisplayName, BattleRules.GetCardName(CardType.IceKill)));
 			for (var i = 0; i < responseAction.Count && !context.GameOver; i++)
 			{
 				DealAttackDamage(context, target, attacker, CardType.IceKill);
@@ -1091,7 +1101,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 	public static int ResolveNanmanInvasion(BattleContext context, Player attacker, BattleAction attackerAction, Player target, BattleAction responseAction)
 	{
 		var attackName = BattleRules.GetCardName(attackerAction.Type);
-		context.RoundResult.AddLine($"{attacker.DisplayName} 使用{attackName}。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_card_fmt", attacker.DisplayName, attackName));
 
 		switch (responseAction.Type)
 		{
@@ -1102,39 +1112,39 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 			case CardType.FireThunderKill:
 			case CardType.IceKill:
 				// 杀系牌 VS 南蛮入侵：两者均属锦囊/攻击混合，互不影响，双方均未受到伤害（X / X）。
-				context.RoundResult.AddLine($"{target.DisplayName} 使用{BattleRules.GetCardName(responseAction.Type)}，对{attackName}无效，双方均未受到伤害。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.card_ineffective_fmt", target.DisplayName, BattleRules.GetCardName(responseAction.Type), attackName));
 				return 0;
 
 			case CardType.Unassailable:
-				context.RoundResult.AddLine($"{target.DisplayName} 使用无懈可击，成功反制，双方均未受到伤害。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.counter_success_no_damage_fmt", target.DisplayName, BattleRules.GetCardName(CardType.Unassailable)));
 				RaiseCancelledAttackEvent(context, attacker, target, attackerAction.Type);
 				return 0;
 
 			case CardType.ArrowBarrage:
-				context.RoundResult.AddLine($"{target.DisplayName} 使用万箭齐发，两张锦囊牌互不影响，双方均未受到伤害。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.tricks_no_effect_fmt", target.DisplayName, BattleRules.GetCardName(CardType.ArrowBarrage)));
 				return 0;
 
 			case CardType.SureKill:
-				context.RoundResult.AddRelation($"必中杀克制{attackName}");
-				context.RoundResult.AddLine($"{target.DisplayName} 使用必中杀，未受到伤害。");
+				context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.counter_fmt", BattleRules.GetCardName(CardType.SureKill), attackName));
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_no_damage_fmt", target.DisplayName, BattleRules.GetCardName(CardType.SureKill)));
 				DealAttackDamage(context, target, attacker, CardType.SureKill);
 				return 0;
 
 			case CardType.ShadowKill:
 				// 影袭杀（黄月英·如影随行专属）和必中杀一样必定命中，同样能反击南蛮入侵，
 				// 不受南蛮入侵"锦囊互不影响"规则限制。
-				context.RoundResult.AddRelation($"影袭杀克制{attackName}");
-				context.RoundResult.AddLine($"{target.DisplayName} 使用影袭杀，未受到伤害。");
+				context.RoundResult.AddRelation(Localization.GetFmt("battle.relation.counter_fmt", BattleRules.GetCardName(CardType.ShadowKill), attackName));
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_no_damage_fmt", target.DisplayName, BattleRules.GetCardName(CardType.ShadowKill)));
 				DealAttackDamage(context, target, attacker, CardType.ShadowKill);
 				return 0;
 
 			case CardType.Steal:
 				// 顺手牵羊是锦囊牌，不造成任何伤害；无法抵挡南蛮入侵，正常受击。
-				context.RoundResult.AddLine($"{target.DisplayName} 使用顺手牵羊，无法抵挡{attackName}。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.cannot_block_fmt", target.DisplayName, BattleRules.GetCardName(CardType.Steal), attackName));
 				return ApplyNanmanInvasionHits(context, attacker, attackerAction, target);
 
 			case CardType.Dodge:
-				context.RoundResult.AddLine($"{target.DisplayName} 使用闪，但闪无法抵挡{attackName}。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.cannot_block_fmt", target.DisplayName, BattleRules.GetCardName(CardType.Dodge), attackName));
 				return ApplyNanmanInvasionHits(context, attacker, attackerAction, target);
 
 			case CardType.Wine:
@@ -1229,16 +1239,16 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 			return;
 		}
 
-		context.RoundResult.AddLine($"{attacker.DisplayName} 对 {target.DisplayName} 使用{BattleRules.GetCardName(attackType)}。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_card_on_target_fmt", attacker.DisplayName, target.DisplayName, BattleRules.GetCardName(attackType)));
 		if (FoldingKnifeEquipment.AppliesTo(attacker, attackType))
 		{
-			context.RoundResult.AddLine($"折叠刀：普通杀分为{FoldingKnifeEquipment.HitCount}段，每段基础伤害{FoldingKnifeEquipment.DamagePerHit}。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.folding_knife_fmt", FoldingKnifeEquipment.HitCount, FoldingKnifeEquipment.DamagePerHit));
 			context.AddTriggerLog("[Equipment/FoldingKnife]");
 			context.AddTriggerLog($"普通杀拆分为{FoldingKnifeEquipment.HitCount}段独立{FoldingKnifeEquipment.DamagePerHit}点伤害，逐段进入完整伤害管线。");
 
 			for (var hitIndex = 0; hitIndex < FoldingKnifeEquipment.HitCount && !context.GameOver && !target.IsDead; hitIndex++)
 			{
-				context.RoundResult.AddLine($"折叠刀第{hitIndex + 1}段。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.folding_knife_hit_fmt", hitIndex + 1));
 				ResolveSingleAttackDamage(context, attacker, target, attackType, FoldingKnifeEquipment.DamagePerHit);
 			}
 			return;
@@ -1296,7 +1306,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		// 影袭发动：状态已在 PrepareDefenseLayers 中提前激活（使激活回合伤害结算前即生效）。
 		if (action.Type == CardType.YingXiActivate && player.HasSkill(SkillIds.YingXi))
 		{
-			context.RoundResult.AddLine($"{player.DisplayName}影袭发动：进入影袭状态（3回合），全程无敌与控制免疫。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.yingxi_enter_fmt", player.DisplayName));
 			context.AddTriggerLog("[影袭]");
 			context.AddTriggerLog($"Trigger: ApplyResourceAndHealing");
 			context.AddTriggerLog($"{player.DisplayName}影袭状态激活，RemainingTurns={player.RemainingTurns}。");
@@ -1320,7 +1330,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		if (luoyiTreatsAttackAsFee)
 		{
 			// 裸衣的“视为出费”只改变招式关系与费类触发语义，不产生费用。
-			context.RoundResult.AddLine($"{player.DisplayName}【裸衣】：{BattleRules.GetCardName(action.Type)}视为出费，但不获得费用。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.luoyi_fee_fmt", player.DisplayName, BattleRules.GetCardName(action.Type)));
 			context.AddTriggerLog("[裸衣] 攻击牌视为出费，不产生资源。");
 			context.ReportPlayerCharacterSkillTriggered(
 				player, SkillIds.Luoyi, TriggerTiming.OnBattlePhase, EffectPriority.Mid, "attack_as_fee_no_gain");
@@ -1335,7 +1345,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 				: (player as EnemyInstance)?.HasEquipment(EquipmentIds.IceBlueArmor) == true;
 			if (playerHasIceArmor)
 			{
-				context.RoundResult.AddLine($"{player.DisplayName}冰蓝装甲：出费不获得费用。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.ice_armor_no_mana_fmt", player.DisplayName));
 				return;
 			}
 
@@ -1442,7 +1452,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 			// 观星 VS 顺手牵羊：双方无事发生。
 			if (context.PlayerAction?.Type == CardType.Guanxing && enemyEntry.Action.IsSteal)
 			{
-				context.RoundResult.AddLine($"{enemyEntry.Enemy.DisplayName}使用顺手牵羊，但观星令顺手牵羊无效，双方无事发生。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.steal_blocked_by_stargazing_fmt", enemyEntry.Enemy.DisplayName));
 				continue;
 			}
 
@@ -1471,14 +1481,14 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		double? requestedAmount = null)
 	{
 		var amount = Math.Min(requestedAmount ?? target.GetStealableMana(), target.GetStealableMana());
-		context.RoundResult.AddLine($"{actor.DisplayName} 对 {target.DisplayName} 使用顺手牵羊。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.use_card_on_target_fmt", actor.DisplayName, target.DisplayName, BattleRules.GetCardName(CardType.Steal)));
 
 		// 【观星】的费用保护必须位于统一偷取入口，而不是只在“玩家出观星、敌人出顺手”
 		// 的同回合分支中处理。这样普通顺手牵羊、突袭附带偷取，以及敌我双方作为目标时
 		// 都使用同一条规则；卧龙集智体在记录/重复观星期间不会被抽空费用。
 		if (target.GuanxingPhase != GuanxingPhase.None)
 		{
-			context.RoundResult.AddLine($"{target.DisplayName}处于观星状态，顺手牵羊无效。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.steal_invalid_stargazing_fmt", target.DisplayName));
 			context.RoundResult.AddStealResolution(actor.DisplayName, target.DisplayName, 0, false);
 			context.AddTriggerLog("[观星]");
 			context.AddTriggerLog($"{target.DisplayName}观星状态：顺手牵羊无效。");
@@ -1487,7 +1497,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (target == context.Player && target.HasSkill(SkillIds.Qianxun))
 		{
-			context.RoundResult.AddLine("谦逊：免疫顺手牵羊，无效。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.steal_immune_fmt", Localization.Get("skill.qianxun.name")));
 			context.RoundResult.AddStealResolution(actor.DisplayName, target.DisplayName, 0, false);
 			context.ReportPlayerCharacterSkillTriggered(
 				target, SkillIds.Qianxun, TriggerTiming.OnBattlePhase, variant: "steal_immunity");
@@ -1496,7 +1506,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (target == context.Player && target.HasSkill(SkillIds.KejiUnlimited))
 		{
-			context.RoundResult.AddLine("克己·无限制协议：免疫顺手牵羊，无效。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.steal_immune_fmt", Localization.Get("skill.keji_unlimited.name")));
 			context.RoundResult.AddStealResolution(actor.DisplayName, target.DisplayName, 0, false);
 			context.ReportPlayerCharacterSkillTriggered(
 				target, SkillIds.KejiUnlimited, TriggerTiming.OnBattlePhase, variant: "steal_immunity");
@@ -1505,7 +1515,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (IsStealImmuneByShadowState(target))
 		{
-			context.RoundResult.AddLine($"{target.DisplayName}处于影袭状态，无法被顺手牵羊。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.steal_invalid_shadow_fmt", target.DisplayName));
 			context.RoundResult.AddStealResolution(actor.DisplayName, target.DisplayName, 0, false);
 			context.AddTriggerLog("[影袭]");
 			context.AddTriggerLog($"{target.DisplayName}影袭状态：顺手牵羊无效。");
@@ -1514,8 +1524,8 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (HasCounterDefense(context, target))
 		{
-			context.RoundResult.AddLine($"{target.DisplayName}无懈可击发动。");
-			context.RoundResult.AddLine("顺手牵羊无效。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.counter_activated_fmt", target.DisplayName, BattleRules.GetCardName(CardType.Unassailable)));
+			context.RoundResult.AddLine(Localization.Get("battle.result.steal_invalid"));
 			context.RoundResult.AddStealResolution(actor.DisplayName, target.DisplayName, 0, false);
 			context.RoundResult.AddCounterDefenseBlock(target == context.Player, CardType.Steal);
 			return 0;
@@ -1523,7 +1533,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (amount <= 0)
 		{
-			context.RoundResult.AddLine($"{target.DisplayName}没有可窃取费用。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.no_mana_to_steal_fmt", target.DisplayName));
 			context.RoundResult.AddStealResolution(actor.DisplayName, target.DisplayName, 0, true);
 			return 0;
 		}
@@ -1532,13 +1542,13 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		actor.GainProtectedStealMana(amount);
 		context.RoundResult.AddSteal(actor, amount);
 		context.RoundResult.AddStealResolution(actor.DisplayName, target.DisplayName, amount, true);
-		context.RoundResult.AddLine("顺手牵羊获得的费用受到保护。");
+		context.RoundResult.AddLine(Localization.Get("battle.result.stolen_mana_protected"));
 
 		// 蜀·奇策增幅只强化玩家一侧的成功顺手牵羊，不改变敌方原有行为。
 		if (actor == context.Player && FactionFateManager.IsShuAmplificationActive())
 		{
 			actor.GainMana(0.5);
-			context.RoundResult.AddLine("蜀·奇策增幅：顺手牵羊额外获得0.5费。");
+			context.RoundResult.AddLine(Localization.Get("battle.result.shu_steal_bonus"));
 		}
 
 		return amount;
@@ -1579,7 +1589,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		actor.GainMana(1);
 		context.RoundResult.AddResourceGain(actor, 1);
-		context.RoundResult.AddLine($"【突袭】：{target.DisplayName}没有费用，{actor.DisplayName}获得1费。");
+		context.RoundResult.AddLine(Localization.GetFmt("battle.result.tuxi_no_mana_fmt", target.DisplayName, actor.DisplayName));
 		return 0;
 	}
 
@@ -1744,7 +1754,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		// 没有任何敌方行动可被响应，生成闲置提示。
 		if (playerAction.IsDodge)
 		{
-			context.RoundResult.AddLine($"{context.Player.DisplayName}使用闪，但未受到可抵挡攻击。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.unused_dodge_fmt", context.Player.DisplayName));
 			return;
 		}
 
@@ -1752,7 +1762,7 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 		{
 			if (!enemyEntry.Enemy.IsDead)
 			{
-				context.RoundResult.AddLine($"{context.Player.DisplayName}使用无懈可击，但未能反制{BattleRules.GetCardName(enemyEntry.Action.Type)}。");
+				context.RoundResult.AddLine(Localization.GetFmt("battle.result.failed_counter_fmt", context.Player.DisplayName, BattleRules.GetCardName(enemyEntry.Action.Type)));
 				return;
 			}
 		}
@@ -1767,13 +1777,13 @@ public sealed class BattlePhaseResolutionEffect : IBattleEffect
 
 		if (action.IsDodge && !CanDodgeRespondTo(opponentAction.Type))
 		{
-			context.RoundResult.AddLine($"{actor.DisplayName}使用闪，但未受到可抵挡攻击。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.unused_dodge_fmt", actor.DisplayName));
 			return;
 		}
 
 		if (action.IsUnassailable && !BattleRules.CanUnassailableCounter(opponentAction.Type))
 		{
-			context.RoundResult.AddLine($"{actor.DisplayName}使用无懈可击，但未能反制{BattleRules.GetCardName(opponentAction.Type)}。");
+			context.RoundResult.AddLine(Localization.GetFmt("battle.result.failed_counter_fmt", actor.DisplayName, BattleRules.GetCardName(opponentAction.Type)));
 		}
 	}
 

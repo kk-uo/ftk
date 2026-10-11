@@ -19,6 +19,7 @@
 //////////////////////////////////////////////////////////
 
 using System;
+using System.Linq;
 
 /// <summary>
 /// Core System 的公开类：BattleRules。
@@ -27,6 +28,14 @@ using System;
 /// </summary>
 public static class BattleRules
 {
+    private static int GetEquipmentCount(Player player, string equipmentId)
+    {
+        return player.Team == BattleTeam.Player
+            ? GameManager.CountEquipment(equipmentId)
+            : player is EnemyInstance enemy
+                ? enemy.Equipments.Count(equipment => equipment.Id == equipmentId)
+                : 0;
+    }
     /// <summary>
     /// Core System 的公开入口：FormatMana。
     ///
@@ -119,6 +128,14 @@ public static class BattleRules
             return 0;
         }
 
+        // 汗血宝马：仅玩家持有时，所有【无懈可击】行动费用恒为 0。
+        if (type == CardType.Unassailable
+            && player.Team == BattleTeam.Player
+            && GameManager.HasEquipment(EquipmentIds.HanXueBaoMa))
+        {
+            return 0;
+        }
+
         // 诸葛连弩：持有者（玩家或敌方）普通杀费用降为0。
         if (type == CardType.Kill)
         {
@@ -130,7 +147,7 @@ public static class BattleRules
             }
         }
 
-        // 火纹银枪：持有者（玩家或敌方）火杀费用降为1（原为2）。
+        // 火纹银枪：持有者（玩家或敌方）火杀费用固定为1，火雷杀费用-1。
         if (type == CardType.FireKill)
         {
             var playerOwns = player.Team == BattleTeam.Player && GameManager.HasEquipment(EquipmentIds.FirePatternSilverSpear);
@@ -138,6 +155,21 @@ public static class BattleRules
             if (playerOwns || enemyOwns)
             {
                 return 1;
+            }
+        }
+
+        // 火纹银枪、雷矛：各自使火雷杀费用-1。通常只能装备一把武器；若通过
+        // 万能槽同时持有，两份独立的减费也会如实叠加，最低为0。
+        if (type == CardType.FireThunderKill)
+        {
+            var reductions = GetEquipmentCount(player, EquipmentIds.FirePatternSilverSpear)
+                + GetEquipmentCount(player, EquipmentIds.ThunderSpear);
+            var trueGuDingDiscountApplies = HasEquipment(player, EquipmentIds.TrueGuDingDao)
+                && target is EnemyInstance guDingTarget
+                && guDingTarget.CurrentMana <= 0;
+            if (reductions > 0 && !trueGuDingDiscountApplies)
+            {
+                return System.Math.Max(0, new Card(type).Cost - reductions);
             }
         }
 
@@ -709,7 +741,6 @@ public static class BattleTriggerEffects
     {
         var manager = new TriggerManager();
         manager.Register(new HuaXingTransformEffect());
-        manager.Register(new HanXueBaoMaEffect());
         manager.Register(new ChangZuiRestoreEffect());
         manager.Register(new MoonGazeEffect());
         // 【洛神】在下一回合开始时按角色当前持有费用执行断费减半；
@@ -740,10 +771,12 @@ public static class BattleTriggerEffects
         manager.Register(new PangTongIronChainActivateEffect());
         manager.Register(new ChituFirstRoundExtraKillEffect());
         manager.Register(new LongBowBeforeDamageEffect());
+        manager.Register(new ClampExoskeletonPreDamageEffect());
         manager.Register(new GuDingDaoRevealEffect());
         manager.Register(new RustGuDingDaoBeforeDamageEffect());
         manager.Register(new MysteriousPotionRevealEffect());
         manager.Register(new DebugInvincibilityEffect());
+        manager.Register(new ClampExoskeletonInvincibilityEffect());
         manager.Register(new PangTongNirvanaInvincibilityEffect());
         manager.Register(new StunBeforeDamageEffect());
         // 【幻象】此前只存在于未接入默认战斗管理器的 SkillEffectRegistry，导致 Boss

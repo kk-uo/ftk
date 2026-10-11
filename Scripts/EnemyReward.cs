@@ -52,6 +52,8 @@ public sealed class EnemyReward
     public float KnowledgeChipDropProbability;
     // 必定掉落防护芯片数量（第一章 Boss 固定掉落）
     public int DefenseChipDropCount;
+    // 必定掉落攻击芯片数量。
+    public int AttackChipDropCount;
     // 随机掉落池：从列表中随机选择恰好1件装备必定掉落（列表为空时不生效）
     public List<string> RandomEquipmentPool = new();
 }

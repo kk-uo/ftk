@@ -48,7 +48,7 @@ public sealed class DebugInvincibilityEffect : IBattleEffect
             return;
         }
 
-        context.RoundResult.AddLine("调试无敌：玩家免疫本次伤害。");
+        context.RoundResult.AddLine(Localization.Get("battle.damage.debug_invincible"));
         context.AddTriggerLog("[OnBeforeDamage]");
         context.AddTriggerLog("Branch=DebugInvincible");
         damage.Cancelled = true;
@@ -94,7 +94,7 @@ public sealed class StunBeforeDamageEffect : IBattleEffect
         }
 
         damage.Cancelled = true;
-        context.RoundResult.AddLine($"眩晕生效：{damage.Source.DisplayName}本次{BattleRules.GetCardName(damage.AttackType)}未造成伤害。");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.stunned_fmt", damage.Source.DisplayName, BattleRules.GetCardName(damage.AttackType)));
         context.AddTriggerLog("[眩晕]");
         context.AddTriggerLog($"{damage.Source.DisplayName}处于眩晕状态，{BattleRules.GetCardName(damage.AttackType)}伤害被取消。");
     }
@@ -192,7 +192,7 @@ public sealed class DefenseBeforeDamageEffect : IBattleEffect
 
         if (luoyiPiercesActionDefense)
         {
-            context.RoundResult.AddLine($"{damage.Source.DisplayName}【裸衣】：{damage.Target.DisplayName}的闪类防御无效。");
+            context.RoundResult.AddLine(Localization.GetFmt("battle.damage.luoyi_pierce_fmt", damage.Source.DisplayName, damage.Target.DisplayName));
             context.AddTriggerLog("[裸衣] Branch=PierceActionDefense");
             context.ReportPlayerCharacterSkillTriggered(
                 context.Player, SkillIds.Luoyi, Timing, Priority, "pierce_action_defense");
@@ -236,8 +236,8 @@ public sealed class DefenseBeforeDamageEffect : IBattleEffect
         {
             var defenderName = defenderIsPlayer
                 ? context.Player.DisplayName
-                : (context.DamageEvent?.Target as EnemyInstance)?.DisplayName ?? "敌方";
-            context.RoundResult.AddLine($"{defenderName}无懈可击抵消影袭杀。");
+                : (context.DamageEvent?.Target as EnemyInstance)?.DisplayName ?? Localization.Get("battle.enemy_name");
+            context.RoundResult.AddLine(Localization.GetFmt("battle.damage.counter_shadow_fmt", defenderName));
         }
         return true;
     }
@@ -284,9 +284,9 @@ public sealed class DefenseBeforeDamageEffect : IBattleEffect
                 context.PlayerPeachHealGranted -= 1;
             }
             var healState = context.Player.HasSkill(SkillIds.Qingnang)
-                ? "青囊保留对应回复"
-                : "对应回复撤销";
-            context.RoundResult.AddLine($"桃护盾消耗1层，{healState}（剩余护盾 {context.PlayerPeachShieldLayers} 层，本回合可回复 {context.PlayerPeachHealGranted} 桃）。");
+                ? Localization.Get("battle.damage.peach_heal_kept")
+                : Localization.Get("battle.damage.peach_heal_cancelled");
+            context.RoundResult.AddLine(Localization.GetFmt("battle.damage.peach_shield_player_fmt", healState, context.PlayerPeachShieldLayers, context.PlayerPeachHealGranted));
             if (context.Player.HasSkill(SkillIds.Qingnang))
             {
                 context.ReportPlayerCharacterSkillTriggered(
@@ -308,9 +308,9 @@ public sealed class DefenseBeforeDamageEffect : IBattleEffect
                 context.EnemyPeachHealGranted[enemyKey] = pending - 1;
             }
             var healState = targetEnemy?.HasSkill(SkillIds.Qingnang) == true
-                ? "，青囊保留对应回复"
+                ? Localization.Get("battle.damage.peach_heal_kept_suffix")
                 : string.Empty;
-            context.RoundResult.AddLine($"桃护盾消耗1层{healState}（剩余 {context.EnemyPeachShieldLayers[enemyKey]} 层）。");
+            context.RoundResult.AddLine(Localization.GetFmt("battle.damage.peach_shield_enemy_fmt", healState, context.EnemyPeachShieldLayers[enemyKey]));
         }
 
         context.RoundResult.AddUniversalBlock(defenderIsPlayer);
@@ -325,7 +325,7 @@ public sealed class DefenseBeforeDamageEffect : IBattleEffect
             context.PlayerWineShieldLayers -= 1;
             // 对应酒的增伤撤销（取消一层待激活的酒增伤）。
             context.Player.CancelOnePendingWinePower();
-            context.RoundResult.AddLine($"酒护盾消耗1层，对应增伤撤销（剩余酒护盾 {context.PlayerWineShieldLayers} 层）。");
+            context.RoundResult.AddLine(Localization.GetFmt("battle.damage.wine_shield_fmt", context.PlayerWineShieldLayers));
         }
         else
         {
@@ -337,7 +337,7 @@ public sealed class DefenseBeforeDamageEffect : IBattleEffect
                 || layers <= 0) return false;
             context.EnemyWineShieldLayers[enemyKey] = layers - 1;
             targetEnemy.CancelOnePendingWinePower();
-            context.RoundResult.AddLine($"酒护盾消耗1层，对应增伤撤销（剩余酒护盾 {context.EnemyWineShieldLayers[enemyKey]} 层）。");
+            context.RoundResult.AddLine(Localization.GetFmt("battle.damage.wine_shield_fmt", context.EnemyWineShieldLayers[enemyKey]));
         }
 
         context.RoundResult.AddWineBlock(defenderIsPlayer);
@@ -350,7 +350,7 @@ public sealed class DefenseBeforeDamageEffect : IBattleEffect
         if (!defenderIsPlayer && context.IgnoreDefenderDodgeForThisAttack)
         {
             context.IgnoreDefenderDodgeForThisAttack = false;
-            context.RoundResult.AddLine("（闪被无视）");
+            context.RoundResult.AddLine(Localization.Get("battle.damage.dodge_ignored"));
             return false;
         }
 
@@ -495,7 +495,7 @@ public sealed class EquipmentBeforeDamageEffect : IBattleEffect
             context.PlayerAttackAbsorbedByShield = true;
         }
 
-        context.RoundResult.AddLine("仁王触发：本局第一次受到伤害时免疫该次伤害。");
+        context.RoundResult.AddLine(Localization.Get("battle.damage.benevolent_king"));
         context.AddTriggerLog("[Equipment]");
         context.AddTriggerLog("仁王：首次即将受到的伤害被免疫。");
     }
@@ -616,7 +616,7 @@ public sealed class EquipmentDamageBonusEffect : IBattleEffect
                 DamageModifierPriority.FlatBonus,
                 DamageModifierOperation.Add,
                 flatBonus));
-            context.RoundResult.AddLine($"加伤生效：{BattleRules.GetCardName(damage.AttackType)}伤害 +{flatBonus}。");
+            context.RoundResult.AddLine(Localization.GetFmt("battle.damage.flat_bonus_fmt", BattleRules.GetCardName(damage.AttackType), flatBonus));
             context.AddTriggerLog("[Equipment/Chip]");
             context.AddTriggerLog($"固定加伤：{BattleRules.GetCardName(damage.AttackType)} +{flatBonus}");
         }
@@ -639,7 +639,7 @@ public sealed class EquipmentDamageBonusEffect : IBattleEffect
                     DamageModifierPriority.FlatBonus,
                     DamageModifierOperation.Add,
                     trickBonus));
-                context.RoundResult.AddLine($"攻击锦囊加伤生效：{BattleRules.GetCardName(damage.AttackType)}伤害 +{trickBonus}。");
+                context.RoundResult.AddLine(Localization.GetFmt("battle.damage.trick_bonus_fmt", BattleRules.GetCardName(damage.AttackType), trickBonus));
                 context.AddTriggerLog("[ChipSystem/Stele]");
                 context.AddTriggerLog($"攻击锦囊加伤：{BattleRules.GetCardName(damage.AttackType)} +{trickBonus}");
             }
@@ -687,7 +687,7 @@ public sealed class ElementRunBuffDamageBonusEffect : IBattleEffect
             DamageModifierPriority.FlatBonus,
             DamageModifierOperation.Add,
             bonus));
-        context.RoundResult.AddLine($"元素强化生效：伤害 +{bonus}。");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.element_bonus_fmt", bonus));
         context.AddTriggerLog("[RunBuff/Element]");
         context.AddTriggerLog($"元素强化：DamageType={damage.DamageType} +{bonus}");
     }
@@ -796,7 +796,7 @@ public sealed class RunBuffDamageTakenEffect : IBattleEffect
             DamageModifierPriority.VulnerableOrReduction,
             DamageModifierOperation.MultiplyFloat,
             multiplier));
-        context.RoundResult.AddLine($"诅咒生效：玩家受到伤害×{multiplier:0.##}。");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.curse_multiplier_fmt", multiplier));
         context.AddTriggerLog("[RunBuff/Curse]");
         context.AddTriggerLog($"诅咒：玩家受到伤害倍率 ×{multiplier:0.##}");
     }
@@ -831,7 +831,7 @@ public sealed class ShaQiDamageOutputEffect : IBattleEffect
             DamageModifierPriority.SpecialMultiplier,
             DamageModifierOperation.MultiplyFloat,
             multiplier));
-        context.RoundResult.AddLine($"煞气缠身生效：玩家造成伤害×{multiplier:0.##}。");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.shaqi_multiplier_fmt", multiplier));
         context.AddTriggerLog("[RunBuff/ShaQiChenShen]");
         context.AddTriggerLog($"煞气缠身：玩家造成伤害倍率 ×{multiplier:0.##}");
     }
@@ -867,7 +867,7 @@ public sealed class RunBuffEnemyDamageBonusEffect : IBattleEffect
             DamageModifierPriority.FinalMultiplier,
             DamageModifierOperation.MultiplyFloat,
             multiplier));
-        context.RoundResult.AddLine($"敌方伤害强化：敌人造成伤害×{multiplier:0.##}。");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.enemy_multiplier_fmt", multiplier));
         context.AddTriggerLog("[EnemyFinalDamageMultiplier]");
         context.AddTriggerLog($"敌方最终伤害倍率 ×{multiplier:0.##}");
     }
@@ -904,16 +904,16 @@ public sealed class ZhuQueYuShanEffect : IBattleEffect
         var effectName = fireKill
             ? "朱雀羽扇（火杀加倍）"
             : "朱雀羽扇（周瑜火攻加倍）";
-        var effectDescription = fireKill
-            ? "你的火杀伤害加倍。"
-            : "周瑜的火攻伤害加倍。";
+        var effectDescription = Localization.Get(fireKill
+            ? "battle.damage.zhuque_fire_kill"
+            : "battle.damage.zhuque_fire_attack");
 
         damage.AddModifier(new DamageModifier(
             effectName,
             DamageModifierPriority.ArmorEquipmentMultiplier,
             DamageModifierOperation.Multiply,
             2));
-        context.RoundResult.AddLine($"朱雀羽扇触发：{effectDescription}");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.zhuque_fmt", effectDescription));
         context.AddTriggerLog("[朱雀羽扇]");
         context.AddTriggerLog($"朱雀羽扇：{effectDescription}");
     }
@@ -955,8 +955,10 @@ public sealed class WushuangDamageEffect : IBattleEffect
             DamageModifierPriority.Wushuang,
             DamageModifierOperation.Multiply,
             wushuangMultiplier));
-        var wushuangDesc = wushuangMultiplier == 3 ? "伤害×3（赤兔强化）" : "伤害翻倍";
-        context.RoundResult.AddLine($"{damage.Source.DisplayName}【无双】生效，{wushuangDesc}。");
+        var wushuangDesc = Localization.Get(wushuangMultiplier == 3
+            ? "battle.damage.wushuang_chitu"
+            : "battle.damage.wushuang_double");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.wushuang_fmt", damage.Source.DisplayName, wushuangDesc));
         context.ReportPlayerCharacterSkillTriggered(
             damage.Source,
             SkillIds.Wushuang,
@@ -1028,7 +1030,7 @@ public sealed class TengjiaEffect : IBattleEffect
                 DamageModifierPriority.ArmorEquipmentMultiplier,
                 DamageModifierOperation.Divide,
                 2));
-            context.RoundResult.AddLine($"藤甲触发（{damage.Target.DisplayName}）：受到物理伤害减半。");
+            context.RoundResult.AddLine(Localization.GetFmt("battle.damage.tengjia_physical_fmt", damage.Target.DisplayName));
             context.AddTriggerLog("[Equipment]");
             context.AddTriggerLog($"藤甲：{damage.Target.DisplayName} 物理伤害最终 ÷2（DamageType={damage.DamageType}）。");
         }
@@ -1041,7 +1043,7 @@ public sealed class TengjiaEffect : IBattleEffect
                 DamageModifierPriority.ArmorEquipmentMultiplier,
                 DamageModifierOperation.Multiply,
                 2));
-            context.RoundResult.AddLine($"藤甲触发（{damage.Target.DisplayName}）：受到火属性伤害加倍。");
+            context.RoundResult.AddLine(Localization.GetFmt("battle.damage.tengjia_fire_fmt", damage.Target.DisplayName));
             context.AddTriggerLog("[Equipment]");
             context.AddTriggerLog($"藤甲：{damage.Target.DisplayName} 火属性伤害最终 ×2（DamageType={damage.DamageType}）。");
         }
@@ -1254,7 +1256,7 @@ public sealed class DyingEffect : IBattleEffect
         }
 
         target.EnterDying();
-        context.RoundResult.AddLine($"{target.DisplayName}进入濒死状态。");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.dying_fmt", target.DisplayName));
         if (ReferenceEquals(target, context.Player))
         {
             MainFlow.TryShowFirstTimeHint(FirstTimeHintManager.HintIds.FirstNearDeath);
@@ -1266,7 +1268,7 @@ public sealed class DyingEffect : IBattleEffect
             return;
         }
 
-        context.RoundResult.AddLine("救援失败。");
+        context.RoundResult.AddLine(Localization.Get("battle.damage.rescue_failed"));
         context.TriggerManager.RaiseTrigger(TriggerTiming.OnDeath, context);
     }
 
@@ -1278,7 +1280,7 @@ public sealed class DyingEffect : IBattleEffect
         }
 
         target.DebugSetHealth(10);
-        context.RoundResult.AddLine("白银狮子触发：本局第一次死亡时生命重置为10。");
+        context.RoundResult.AddLine(Localization.Get("battle.damage.silver_lion_revive"));
         context.AddTriggerLog("[Equipment]");
         context.AddTriggerLog("白银狮子：濒死时生命重置为10。");
         return target.Health > 0;
@@ -1304,8 +1306,8 @@ public sealed class DyingEffect : IBattleEffect
             new HealthChangeSource(HealthChangeSourceKind.AttackAction, BattleRules.GetCardName(CardType.Peach), CardType.Peach.ToString(), target)).HealedAmount;
         target.MarkDyingPeachReviveUsed();
         var useCount = target.DyingPeachReviveUses;
-        context.RoundResult.AddLine($"{target.DisplayName}使用桃进行救援（第{useCount}次，消耗{BattleRules.FormatMana(peachCost)}费）。");
-        context.RoundResult.AddLine($"恢复{healed}生命。");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.peach_rescue_fmt", target.DisplayName, useCount, BattleRules.FormatMana(peachCost)));
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.healed_fmt", healed));
         if (healed > 0 && target.HasSkill(SkillIds.Qingnang))
         {
             context.ReportPlayerCharacterSkillTriggered(
@@ -1346,8 +1348,8 @@ public sealed class DyingEffect : IBattleEffect
             BattleConstants.PeachHeal,
             false,
             new HealthChangeSource(HealthChangeSourceKind.AttackAction, BattleRules.GetCardName(CardType.Wine), CardType.Wine.ToString(), target)).HealedAmount;
-        context.RoundResult.AddLine($"{target.DisplayName}使用酒进行救援。");
-        context.RoundResult.AddLine($"恢复{healed}生命。");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.wine_rescue_fmt", target.DisplayName));
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.healed_fmt", healed));
         CodexService.RecordCardSpecial(CardType.Wine);
         return target.Health > 0;
     }
@@ -1378,7 +1380,7 @@ public sealed class DeathEffect : IBattleEffect
 
         target.MarkDead();
         target.ClearStatuses();
-        context.RoundResult.AddLine($"{target.DisplayName}死亡。");
+        context.RoundResult.AddLine(Localization.GetFmt("battle.damage.death_fmt", target.DisplayName));
         if (target == context.Player)
         {
             context.PlayerDiedThisRound = true;
@@ -1392,7 +1394,7 @@ public sealed class DeathEffect : IBattleEffect
                 context.Outcome = BattleOutcome.Victory;
                 context.GameOverText = Localization.Get("battle.gameover.victory");
                 context.MutualCollapseVictory = true;
-                context.RoundResult.AddLine("双方本回合同时倒下，判定为互伤胜利。");
+                context.RoundResult.AddLine(Localization.Get("battle.damage.mutual_victory"));
                 return;
             }
 
@@ -1421,7 +1423,7 @@ public sealed class DeathEffect : IBattleEffect
                 {
                     sibling.MarkDead();
                     sibling.ClearStatuses();
-                    context.RoundResult.AddLine($"{sibling.DisplayName}（共享生命池耗尽）随之倒下。");
+                    context.RoundResult.AddLine(Localization.GetFmt("battle.damage.shared_pool_death_fmt", sibling.DisplayName));
                     defeatedDefinitionIds.Add(sibling.Definition.Id);
                 }
             }
@@ -1461,7 +1463,7 @@ public sealed class DeathEffect : IBattleEffect
             if (context.PlayerDiedThisRound)
             {
                 context.MutualCollapseVictory = true;
-                context.RoundResult.AddLine("双方本回合同时倒下，判定为互伤胜利。");
+                context.RoundResult.AddLine(Localization.Get("battle.damage.mutual_victory"));
             }
         }
     }

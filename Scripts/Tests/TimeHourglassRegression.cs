@@ -7,7 +7,7 @@
 // 1. 验证时间沙漏属于统一重铸/随机奖励池的传奇增益饰品。
 // 2. 验证装备后在首回合战斗回合前对双方造成第55回合对应的伤害。
 // 3. 验证战场崩坏从第55回合开始，致命掉血最低为0并进入濒死流程。
-// 4. 验证未装备时不会触发，且不会修改当前回合数。
+// 4. 验证玩家或敌人携带时都会触发，未装备时不会触发，且不会修改当前回合数。
 //
 // 不负责：
 // × 验证选择面板的视觉布局。
@@ -38,8 +38,10 @@ public partial class TimeHourglassRegression : Node
         try
         {
             Localization.Initialize();
+            DifficultyManager.ResetForTest();
             TestDefinitionAndLegendaryChoicePool();
             TestEquippedBattleStartTrigger();
+            TestEnemyEquippedBattleStartTrigger();
             TestUnequippedDoesNotTrigger();
             TestCollapseStartsAtTurn55();
             TestLethalCollapseClampsAtZeroAndResolvesDeath();
@@ -134,9 +136,23 @@ public partial class TimeHourglassRegression : Node
         Assert(context.Encounter!.Enemies[0].Health == 40, "未装备时间沙漏仍然对敌人造成了伤害");
     }
 
-    private void TestCollapseStartsAtTurn55()
+    private void TestEnemyEquippedBattleStartTrigger()
     {
         GameManager.BeginNewRun();
+        var context = CreateContext(new TriggerManager());
+        var enemy = context.Encounter!.Enemies[0];
+        Assert(enemy.TryAddBattleEquipment(EquipmentIds.TimeHourglass), "无法给敌方战斗实例添加时间沙漏");
+
+        new TimeHourglassEffect().Execute(context);
+
+        Assert(context.Player.Health == 39, "敌方时间沙漏没有对玩家造成第55回合的1点伤害");
+        Assert(enemy.Health == 39, "敌方时间沙漏没有对敌人造成第55回合的1点伤害");
+        Assert(context.TurnCounter == 1, "敌方时间沙漏错误修改了当前回合数");
+    }
+
+    private void TestCollapseStartsAtTurn55()
+    {
+        BeginDifficultyThreeRun();
         var context = CreateContext(BattleTriggerEffects.CreateDefaultManager());
         context.TurnCounter = 54;
         new BattlefieldCollapseEffect().Execute(context);
@@ -152,7 +168,7 @@ public partial class TimeHourglassRegression : Node
 
     private void TestLethalCollapseClampsAtZeroAndResolvesDeath()
     {
-        GameManager.BeginNewRun();
+        BeginDifficultyThreeRun();
         var context = CreateContext(
             BattleTriggerEffects.CreateDefaultManager(),
             playerHp: 1,
@@ -170,7 +186,7 @@ public partial class TimeHourglassRegression : Node
 
     private void TestCollapseUsesDyingRescuePipeline()
     {
-        GameManager.BeginNewRun();
+        BeginDifficultyThreeRun();
         var context = CreateContext(
             BattleTriggerEffects.CreateDefaultManager(),
             playerHp: 1,
@@ -187,7 +203,7 @@ public partial class TimeHourglassRegression : Node
 
     private void TestSimultaneousLethalCollapseSettlesEveryUnit()
     {
-        GameManager.BeginNewRun();
+        BeginDifficultyThreeRun();
         var context = CreateContext(
             BattleTriggerEffects.CreateDefaultManager(),
             playerHp: 3,
@@ -201,6 +217,15 @@ public partial class TimeHourglassRegression : Node
         Assert(context.Player.Health == 0 && enemy.Health == 0, "同批次致命崩坏没有把双方生命限制在0");
         Assert(context.Player.IsDead && enemy.IsDead, "同批次归零后有单位遗漏濒死或死亡结算");
         Assert(context.MutualCollapseVictory, "双方同时被战场崩坏击倒时没有进入既有互伤结算");
+    }
+
+    private static void BeginDifficultyThreeRun()
+    {
+        GameManager.BeginNewRun();
+        if (!DifficultyManager.TrySelect(DifficultyLevel.Difficulty3))
+        {
+            throw new InvalidOperationException("无法为战场崩坏回归选择难度3");
+        }
     }
 
     private static BattleContext CreateContext(

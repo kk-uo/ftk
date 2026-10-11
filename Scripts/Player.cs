@@ -100,6 +100,8 @@ public partial class Player : BattleUnit
     public bool ClampExoskeletonActive { get; private set; }
     // 钳制机械外骨骼修复待机：触发后置 true，下一回合开始时全量恢复生命。
     public bool ClampExoskeletonRepairPending { get; private set; }
+    // 钳制机械外骨骼触发后，直到本回合结束前免疫伤害。
+    public bool ClampExoskeletonInvincibleThisRound { get; private set; }
     // 短弓：本场战斗已触发次数（0–3，超过3后失效）及本回合是否已触发。
     public int ShortBowBattleTriggers { get; private set; }
     public bool ShortBowTriggeredThisRound { get; private set; }
@@ -227,6 +229,7 @@ public partial class Player : BattleUnit
         JetMaceActive = true;
         ClampExoskeletonActive = true;
         ClampExoskeletonRepairPending = false;
+        ClampExoskeletonInvincibleThisRound = false;
         ShortBowBattleTriggers = 0;
         ShortBowTriggeredThisRound = false;
         LongBowUsed = false;
@@ -484,6 +487,7 @@ public partial class Player : BattleUnit
     {
         ClampExoskeletonActive = false;
         ClampExoskeletonRepairPending = true;
+        ClampExoskeletonInvincibleThisRound = true;
     }
 
     /// <summary>
@@ -494,6 +498,12 @@ public partial class Player : BattleUnit
     public void ClearClampRepairPending()
     {
         ClampExoskeletonRepairPending = false;
+    }
+
+    /// <summary>在回合结束时移除钳制机械外骨骼提供的临时无敌。</summary>
+    public void ClearClampExoskeletonInvincibility()
+    {
+        ClampExoskeletonInvincibleThisRound = false;
     }
 
     /// <summary>

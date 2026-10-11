@@ -102,6 +102,11 @@ public partial class BattleManager
     /// </summary>
     private void ShowBattlefieldCollapseDamagePopups()
     {
+        if (!DifficultyManager.TimeCollapseEnabled)
+        {
+            return;
+        }
+
         var damage = BattlefieldCollapseEffect.CalculateDamage(_turnNumber);
         if (damage <= 0)
         {

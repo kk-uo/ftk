@@ -59,6 +59,7 @@ public partial class CharacterSelectController : Control
     public override void _Ready()
     {
         BuildLayout();
+        Localization.LanguageChanged += OnLanguageChanged;
         ShowCharacterInfo(CharacterDatabase.GetAllCharacters()[0]);
 
         // Hero Unlock System：每次打开角色选择界面时，把积压的"新英雄解锁"公告
@@ -85,6 +86,17 @@ public partial class CharacterSelectController : Control
             Localization.Get("tutorial.integrated.char_select.objective"),
             string.Empty,
             showContinueButton: false);
+    }
+
+    public override void _ExitTree() => Localization.LanguageChanged -= OnLanguageChanged;
+
+    private void OnLanguageChanged()
+    {
+        var selectedId = _selectedCharacterId;
+        RefreshLayout();
+        var selected = CharacterDatabase.GetAllCharacters().FirstOrDefault(c => c.Id == selectedId);
+        if (selected != null) SelectCharacter(selected);
+        if (IntegratedTutorialFlow.IsActive) SetupTutorialHighlight();
     }
 
     private void BuildLayout()
@@ -128,7 +140,7 @@ public partial class CharacterSelectController : Control
 
         var title = new Label
         {
-            Text = DebugModeSelection ? "选择数据芯片 / 调试终端" : "选择数据芯片",
+            Text = Localization.Get(DebugModeSelection ? "char.chip.debug_title" : "char.chip.title"),
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
         title.AddThemeFontSizeOverride("font_size", 52);
@@ -148,7 +160,7 @@ public partial class CharacterSelectController : Control
         var factionTabs = new HBoxContainer();
         factionTabs.AddThemeConstantOverride("separation", 14);
         root.AddChild(factionTabs);
-        foreach (var entry in new (string Text, Faction? Faction)[] { ("全部芯片", null), ("吴", Faction.Wu), ("蜀", Faction.Shu), ("魏", Faction.Wei), ("群", Faction.Qun) })
+        foreach (var entry in new (string Text, Faction? Faction)[] { (Localization.Get("char.chip.all"), null), (GetFactionText(Faction.Wu), Faction.Wu), (GetFactionText(Faction.Shu), Faction.Shu), (GetFactionText(Faction.Wei), Faction.Wei), (GetFactionText(Faction.Qun), Faction.Qun) })
         {
             var tab = new Button { Text = entry.Text, CustomMinimumSize = new Vector2(150, 52), ToggleMode = true, ButtonPressed = entry.Faction == null };
             tab.AddThemeFontSizeOverride("font_size", 24);
@@ -270,7 +282,7 @@ public partial class CharacterSelectController : Control
         infoRoot.AddThemeConstantOverride("separation", 12);
         infoMargin.AddChild(infoRoot);
         var moduleTitle = CreateInfoLabel(18);
-        moduleTitle.Text = "英雄数据终端  /  芯片读取";
+        moduleTitle.Text = Localization.Get("char.chip.terminal");
         moduleTitle.AddThemeColorOverride("font_color", new Color("35b7cf"));
         infoRoot.AddChild(moduleTitle);
 
@@ -312,7 +324,7 @@ public partial class CharacterSelectController : Control
         root.AddChild(actionRow);
         _awakenButton = new Button
         {
-            Text = "插入芯片  ››",
+            Text = Localization.Get("char.chip.insert"),
             Disabled = true,
             CustomMinimumSize = new Vector2(440, 108),
             TooltipText = Localization.Get("char.select.start_hint")

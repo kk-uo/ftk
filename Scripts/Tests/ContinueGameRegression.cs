@@ -12,12 +12,20 @@ public partial class ContinueGameRegression : Node
             Localization.Initialize();
             var host = new Control();
             AddChild(host);
-            var saved = new Control { Visible = false, ProcessMode = ProcessModeEnum.Disabled };
+            var saved = new Control();
             saved.SetMeta("regression_hp", 23);
             host.AddChild(saved);
+            var statusLayer = new CanvasLayer { Name = "PlayerStatusLayer" };
+            saved.AddChild(statusLayer);
+            var nestedLayer = new CanvasLayer { Visible = false };
+            statusLayer.AddChild(nestedLayer);
             // 不初始化整个游戏，直接验证场景暂存/菜单生命周期，避免改动玩家存档。
             flow = new MainFlow();
             Set(flow, "_sceneHost", host);
+            Call(flow, "HideSuspendedScreenPresentation", saved);
+            saved.Hide();
+            saved.ProcessMode = ProcessModeEnum.Disabled;
+            Check(!statusLayer.Visible && !nestedLayer.Visible, "暂存后独立角色/演出层仍然可见");
             Set(flow, "_suspendedRunScreen", saved);
             var menu = new MainMenuController();
             menu.SetContinueAvailable(true);
@@ -39,9 +47,21 @@ public partial class ContinueGameRegression : Node
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             ((Button)Get(returnMenu, "_continueButton")!).EmitSignal(BaseButton.SignalName.Pressed);
             Check(saved.Visible && saved.ProcessMode == ProcessModeEnum.Inherit, "没有恢复场景显示和处理");
+            Check(statusLayer.Visible && !nestedLayer.Visible, "没有按原可见性恢复独立图层");
             Check(saved.GetMeta("regression_hp").AsInt32() == 23, "恢复后状态改变");
             Check(Get(flow, "_suspendedRunScreen") == null, "暂存引用未清除");
             Check(host.GetChildCount() == 1, "恢复后菜单未移除");
+            // 对真实战斗场景也验证，避免测试夹具遗漏后来增加的独立图层。
+            using var battleScene = GD.Load<PackedScene>("res://Scenes/Battle.tscn");
+            var battle = battleScene.Instantiate<BattleManager>();
+            var playerLayer = battle.GetNode<CanvasLayer>("PlayerStatusLayer");
+            var skillLayer = battle.GetNode<CanvasLayer>("SkillTriggerPresentationLayer");
+            skillLayer.Hide();
+            Call(flow, "HideSuspendedScreenPresentation", battle);
+            Check(!playerLayer.Visible && !skillLayer.Visible, "真实战斗场景图层未隐藏");
+            Call(flow, "RestoreSuspendedScreenPresentation");
+            Check(playerLayer.Visible && !skillLayer.Visible, "真实战斗场景图层恢复状态错误");
+            battle.Free();
             GD.Print("CONTINUE_GAME_REGRESSION_PASS");
             GetTree().Quit();
         }

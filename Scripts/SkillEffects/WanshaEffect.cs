@@ -18,12 +18,13 @@
 // 项目内对应 Manager、Database 与 Trigger 系统
 //////////////////////////////////////////////////////////
 
-// 完杀（贾诩专属·史诗）：当任意角色通过治疗恢复生命值时，对其造成等同于本次治疗量的真实伤害。
+// 完杀（贾诩专属·史诗）：敌方角色通过治疗恢复生命值时，对其造成等同于本次治疗量的真实伤害。
+// 贾诩自身的治疗不受影响。
 // 真实伤害：无视护甲、无视减伤、无视闪避，不属于攻击伤害。
 // 若实际恢复量为0，则不触发（例如满血状态使用桃）。
 //
 // WanshaEffect（ISkillEffect，注册存根，实际效果通过 BattleRules 直接注册）。
-// WanshaHealCancelEffect（OnHeal, Low）：响应所有 OnHeal 事件，向被治疗单位施加等量真实伤害。
+// WanshaHealCancelEffect（OnHeal, Low）：仅响应敌方的 OnHeal 事件，向被治疗单位施加等量真实伤害。
 /// <summary>
 /// Skill Effect System 的公开类：WanshaEffect。
 ///
@@ -60,54 +61,69 @@ public sealed class WanshaHealCancelEffect : IBattleEffect
     /// </summary>
     public void Execute(BattleContext context)
     {
-        // 完杀不再只检查玩家：只要玩家或任意一个存活敌人拥有完杀（例如精英"失心者"），
-        // 这场战斗里的任意一次治疗都会触发等量真实伤害——与"任意角色通过治疗恢复生命值"
-        // 的技能描述保持一致，不再是"只有玩家角色是贾诩才会生效"的单向判断。
-        var hasWansha = context.Player.HasSkill(SkillIds.Wansha);
-        if (!hasWansha && context.Encounter != null)
-        {
-            foreach (var enemy in context.Encounter.Enemies)
-            {
-                if (!enemy.IsDead && enemy.HasSkill(SkillIds.Wansha))
-                {
-                    hasWansha = true;
-                    break;
-                }
-            }
-        }
-
-        if (!hasWansha || context.GameOver)
-        {
-            return;
-        }
-
         var heal = context.HealEvent;
-        if (heal == null || heal.Amount <= 0)
+        if (heal == null || heal.Amount <= 0 || context.GameOver)
         {
             return;
         }
 
         var healed = heal.Healer;
-        if (healed.IsDead)
+        if (healed.IsDead || healed.HasSkill(SkillIds.Wansha))
+        {
+            // 自身拥有【完杀】时，自己的治疗不会被反噬。
+            return;
+        }
+
+        // 只有敌对阵营持有【完杀】时才处罚这次治疗；同阵营的持有者不会伤害自己人。
+        var owner = FindHostileOwner(context, healed);
+        if (owner == null)
         {
             return;
         }
 
         healed.TakeDamage(heal.Amount);
-        context.RoundResult.AddLine($"完杀：{healed.DisplayName}恢复{heal.Amount}点生命，完杀造成{heal.Amount}点真实伤害。");
+        context.RoundResult.AddLine($"完杀：{owner.DisplayName}对{healed.DisplayName}的{heal.Amount}点治疗造成{heal.Amount}点真实伤害。");
         context.AddTriggerLog("[完杀]");
-        context.AddTriggerLog($"完杀：{healed.DisplayName}恢复{heal.Amount} → 受到{heal.Amount}点真实伤害。");
+        context.AddTriggerLog($"{owner.DisplayName}：{healed.DisplayName}恢复{heal.Amount} → 受到{heal.Amount}点真实伤害。");
         context.ReportPlayerCharacterSkillTriggered(
-            context.Player, SkillIds.Wansha, Timing, Priority, "heal_punish");
+            owner, SkillIds.Wansha, Timing, Priority, "heal_punish");
 
         if (healed.Health <= 0 && !healed.IsDead && !context.GameOver)
         {
             var savedHeal = context.HealEvent;
             context.HealEvent = null;
-            context.DamageEvent = new DamageEvent(context.Player, healed, CardType.Kill, heal.Amount);
+            context.DamageEvent = new DamageEvent(owner, healed, CardType.Kill, heal.Amount);
             context.RaiseOnDying();
             context.DamageEvent = null;
             context.HealEvent = savedHeal;
         }
+    }
+
+    private static Player? FindHostileOwner(BattleContext context, Player healed)
+    {
+        if (!context.Player.IsDead
+            && context.Player.Team != healed.Team
+            && context.Player.HasSkill(SkillIds.Wansha))
+        {
+            return context.Player;
+        }
+
+        var enemies = context.Encounter?.Enemies;
+        if (enemies == null)
+        {
+            return null;
+        }
+
+        foreach (var enemy in enemies)
+        {
+            if (!enemy.IsDead
+                && enemy.Team != healed.Team
+                && enemy.HasSkill(SkillIds.Wansha))
+            {
+                return enemy;
+            }
+        }
+
+        return null;
     }
 }

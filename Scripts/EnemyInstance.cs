@@ -86,6 +86,7 @@ public sealed class EnemyInstance : Player
         {
             RuntimeStates["clamp_exo_active"] = true;
             RuntimeStates["clamp_exo_repair_pending"] = false;
+            RuntimeStates["clamp_exo_invincible_this_round"] = false;
         }
 
         // 侦测者：战斗开始默认进入警戒状态（前3回合只出费），见 EnemyAI.cs 的
@@ -108,7 +109,7 @@ public sealed class EnemyInstance : Player
             EquipmentIds.SilverLion => 20,
             EquipmentIds.ScaleArmor => 10,
             EquipmentIds.IronHeavyArmor => 20,
-            EquipmentIds.ClampExoskeleton => 50,
+            EquipmentIds.ClampExoskeleton => 80,
             EquipmentIds.Conductor => 10,
             EquipmentIds.TycoonArmor => 10,
             _ => 0
@@ -232,6 +233,48 @@ public sealed class EnemyInstance : Player
             }
         }
         return false;
+    }
+
+    /// <summary>
+    /// 为当前战斗实例追加装备，不修改只读 EnemyDefinition。用于难度修正等运行时规则。
+    /// 生命加成与每场战斗触发状态会和构造时装备走同一语义。
+    /// </summary>
+    public bool TryAddBattleEquipment(string equipmentId)
+    {
+        if (HasEquipment(equipmentId))
+        {
+            return false;
+        }
+
+        var definition = EquipmentDatabase.GetEquipment(equipmentId);
+        if (definition == null)
+        {
+            return false;
+        }
+
+        Equipments.Add(definition);
+        var hpBonus = GetEquipmentMaxHpBonus(equipmentId);
+        if (hpBonus > 0)
+        {
+            AddMaxHealth(hpBonus);
+        }
+
+        if (equipmentId == EquipmentIds.IronHeavyArmor)
+        {
+            RuntimeStates["iron_heavy_armor_active"] = true;
+        }
+        else if (equipmentId == EquipmentIds.JetMace)
+        {
+            RuntimeStates["jet_mace_active"] = true;
+        }
+        else if (equipmentId == EquipmentIds.ClampExoskeleton)
+        {
+            RuntimeStates["clamp_exo_active"] = true;
+            RuntimeStates["clamp_exo_repair_pending"] = false;
+            RuntimeStates["clamp_exo_invincible_this_round"] = false;
+        }
+
+        return true;
     }
 
     /// <summary>

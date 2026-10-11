@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://muobqhqg4vvo"
-path="res://.godot/imported/boss_traitor.png-4129e5eed1bd32f48965aeba904811c3.ctex"
+uid="uid://ci8k6wh2dnxei"
+path="res://.godot/imported/bg_map_chapter3_imperial_route.png-4378ebc4404f78fc0645700df2da3b03.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Bosses/BattlePortraits/Generated/boss_traitor.png"
-dest_files=["res://.godot/imported/boss_traitor.png-4129e5eed1bd32f48965aeba904811c3.ctex"]
+source_file="res://Assets/Backgrounds/Map/bg_map_chapter3_imperial_route.png"
+dest_files=["res://.godot/imported/bg_map_chapter3_imperial_route.png-4378ebc4404f78fc0645700df2da3b03.ctex"]
 
 [params]
 

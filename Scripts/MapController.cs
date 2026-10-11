@@ -101,7 +101,7 @@ public partial class MapController : Control
         var explorationViewport = BuildExplorationViewport();
         explorationViewport.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(explorationViewport);
-        if (GameManager.CurrentChapterVariant == ChapterVariant.Rainstorm)
+        if (GameManager.HasChapterVariant(ChapterVariant.Rainstorm))
             AddChild(new RainMapOverlay());
 
         // HUD 悬浮层：本身不拦截点击（MouseFilter=Ignore），真正的按钮/面板
@@ -451,9 +451,14 @@ public partial class MapController : Control
     private static string BuildRunInfoText()
     {
         var text = string.Format(Localization.Get("map.status.fmt"), GameManager.Forage, GameManager.Gold, GetCurrentStageText());
+        text += "    " + Localization.GetFmt("map.difficulty.fmt", Localization.Get($"difficulty.{(int)DifficultyManager.CurrentDifficulty}.name"));
         if (GameManager.CurrentChapterVariant != ChapterVariant.None)
         {
             text += "    " + string.Format(Localization.Get("map.chapter_variant.fmt"), GameManager.GetChapterVariantDisplayName(GameManager.CurrentChapterVariant));
+        }
+        if (GameManager.GlobalRainActive && GameManager.CurrentChapterVariant != ChapterVariant.Rainstorm)
+        {
+            text += "    " + string.Format(Localization.Get("map.chapter_variant.fmt"), GameManager.GetChapterVariantDisplayName(ChapterVariant.Rainstorm));
         }
 
         return text;

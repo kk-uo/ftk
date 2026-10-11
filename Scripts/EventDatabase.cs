@@ -1056,12 +1056,15 @@ internal static class EventFactory
                 new()
                 {
                     Name = "提取净化液",
+                    NameKey = "event.ruler_statue.option3.name",
                     Description = "你打开雕像底座的循环装置，取得其中仍保持澄澈的净化液。",
+                    DescriptionKey = "event.ruler_statue.option3.desc",
                     Rewards = new List<EventReward>
                     {
                         new() { Type = EventRewardType.Equipment, StringValue = EquipmentIds.SpringEssence }
                     },
-                    ResultText = "循环装置的最后一滴净化液凝结成晶体。\n获得【泉水精华】。"
+                    ResultText = "循环装置的最后一滴净化液凝结成晶体。\n获得【泉水精华】。",
+                    ResultTextKey = "event.ruler_statue.option3.result"
                 }
             }
         };
@@ -1240,15 +1243,15 @@ internal static class EventFactory
                 {
                     Name = "拿取泉水之源",
                     NameKey = "event.life_spring.option3.name",
-                    Description = "获得诅咒×2，并立即获得1粮草。",
+                    Description = "获得诅咒×2，并获得【泉水精华】。",
                     DescriptionKey = "event.life_spring.option3.desc",
                     Rewards = new List<EventReward>
                     {
                         new() { Type = EventRewardType.RunBuff, StringValue = RunBuffIds.Curse },
                         new() { Type = EventRewardType.RunBuff, StringValue = RunBuffIds.Curse },
-                        new() { Type = EventRewardType.Forage, Amount = 1 }
+                        new() { Type = EventRewardType.Equipment, StringValue = EquipmentIds.SpringEssence }
                     },
-                    ResultText = "你带走了泉眼深处残留的能量，一股阴冷气息同时缠上了你。",
+                    ResultText = "你带走了泉眼深处的源核，获得【泉水精华】；一股阴冷气息同时缠上了你。",
                     ResultTextKey = "event.life_spring.option3.result"
                 }
             }

@@ -81,8 +81,15 @@ public partial class HeroChipButton : Button
         DrawString(font,new Vector2(22,29),Serial.ToString("D2"),HorizontalAlignment.Left,-1,16,border);
         if (!Unlocked) DrawString(font,new Vector2(0,h*.58f),"?",HorizontalAlignment.Center,w,64,new Color("53606b"));
         DrawRect(new Rect2(17,h-66,w-34,43),new Color(.015f,.025f,.04f,.94f));
-        DrawString(font,new Vector2(24,h-40),Unlocked ? Hero.Name : "未解锁",HorizontalAlignment.Left,w-45,24,Unlocked ? Colors.White : new Color("63717c"));
-        if (Unlocked) DrawString(font,new Vector2(w-44,h-22),Hero.Faction switch { Faction.Wu=>"吴",Faction.Shu=>"蜀",Faction.Wei=>"魏",_=>"群" },HorizontalAlignment.Left,-1,16,accent);
+        var name = Unlocked ? Hero.Name : Localization.Get("char.chip.locked");
+        var nameSize = 24;
+        while (nameSize > 12 && font.GetStringSize(name, fontSize: nameSize).X > w-45) nameSize--;
+        DrawString(font,new Vector2(24,h-40),name,HorizontalAlignment.Left,w-45,nameSize,Unlocked ? Colors.White : new Color("63717c"));
+        if (Unlocked)
+        {
+            var faction = Localization.Get(Hero.Faction switch { Faction.Wu=>"char.faction.wu",Faction.Shu=>"char.faction.shu",Faction.Wei=>"char.faction.wei",_=>"char.faction.qun" });
+            DrawString(font,new Vector2(24,h-22),faction,HorizontalAlignment.Right,w-48,16,accent);
+        }
         if (_selected && _scan > 0 && _scan < 1)
             DrawRect(new Rect2(18,32+(h-98)*_scan,w-36,5),new Color(1,.9f,.4f,.7f));
         if (IsHovered() || HasFocus()) DrawRect(new Rect2(13,15,w-26,h-39),new Color(border,.09f));

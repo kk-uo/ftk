@@ -835,7 +835,7 @@ public partial class BattleManager : Control
             + GameManager.CountEquipment(EquipmentIds.Tengjia) * 10
             + GameManager.CountEquipment(EquipmentIds.ScaleArmor) * 10
             + GameManager.CountEquipment(EquipmentIds.IronHeavyArmor) * 20
-            + GameManager.CountEquipment(EquipmentIds.ClampExoskeleton) * 50
+            + GameManager.CountEquipment(EquipmentIds.ClampExoskeleton) * 80
             + GameManager.CountEquipment(EquipmentIds.Conductor) * 10
             + GameManager.CountEquipment(EquipmentIds.WaterproofModule) * 10
             + GameManager.CountEquipment(EquipmentIds.TycoonArmor) * 10;
@@ -1565,7 +1565,8 @@ public partial class BattleManager : Control
         // 【战场崩坏】首次进入第55回合：屏幕中央提示替代常规的"回合后"文案，
         // ShowBattleMessage 会在 1.5 秒后自己把文案换回正常的阶段提示，
         // 这里不需要额外处理"提示消失后应该显示什么"。
-        if (_turnNumber == BattlefieldCollapseEffect.TriggerTurn)
+        if (DifficultyManager.TimeCollapseEnabled
+            && _turnNumber == BattlefieldCollapseEffect.TriggerTurn)
         {
             ShowBattleMessage(Localization.Get("battle.collapse.start"));
         }

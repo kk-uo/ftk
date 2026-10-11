@@ -22,7 +22,7 @@ public partial class WulongGuanxingRegression : Node
             TestGuanxingBlocksUnifiedSteal();
             TestGuanxingRecordsHighestAffordableAttack();
             TestGuanxingOnlyRecordsFeeAtZeroMana();
-            TestChapterTwoBossRewardsLifeChipInsteadOfAttackChip();
+            TestChapterTwoBossRewardDefinitions();
             GD.Print($"WULONG_GUANXING_TEST_PASS assertions={_assertionCount}");
             GetTree().Quit(0);
         }
@@ -74,24 +74,34 @@ public partial class WulongGuanxingRegression : Node
         Assert(selected.Type == CardType.Fee, "卧龙集智体在0费时没有以费作为观星录制兜底");
     }
 
-    private void TestChapterTwoBossRewardsLifeChipInsteadOfAttackChip()
+    private void TestChapterTwoBossRewardDefinitions()
     {
-        var chapterTwoBossIds = new[]
+        var specialBossIds = new[]
         {
             "zuoci",
-            "gang_boss",
-            "wulong_collective_intelligence",
-            "huang_yi_zhi_zhu"
+            "gang_boss"
         };
 
-        foreach (var bossId in chapterTwoBossIds)
+        foreach (var bossId in specialBossIds)
+        {
+            var definition = EnemyDatabase.GetEnemy(bossId)
+                ?? throw new InvalidOperationException($"缺少第二章Boss：{bossId}");
+            Assert(definition.Reward.GoldOverride == 100,
+                $"第二章Boss【{definition.Name}】应奖励100金币");
+            Assert(definition.Reward.AttackChipDropCount == 1,
+                $"第二章Boss【{definition.Name}】应奖励1个攻击芯片");
+            Assert(definition.Reward.KnowledgeChipDropProbability >= 1.0f,
+                $"第二章Boss【{definition.Name}】应必定奖励1个知识芯片");
+            Assert(definition.Reward.DefenseChipDropCount == 0,
+                $"第二章Boss【{definition.Name}】不应额外奖励生命芯片");
+        }
+
+        foreach (var bossId in new[] { "wulong_collective_intelligence", "huang_yi_zhi_zhu" })
         {
             var definition = EnemyDatabase.GetEnemy(bossId)
                 ?? throw new InvalidOperationException($"缺少第二章Boss：{bossId}");
             Assert(definition.Reward.DefenseChipDropCount == 1,
-                $"第二章Boss【{definition.Name}】应奖励1个生命芯片（防御芯片）");
-            Assert(!definition.Reward.EquipmentRewards.Contains(EquipmentIds.AttackChip),
-                $"第二章Boss【{definition.Name}】不应再奖励攻击芯片");
+                $"第二章Boss【{definition.Name}】应保留1个生命芯片（防御芯片）奖励");
         }
     }
 

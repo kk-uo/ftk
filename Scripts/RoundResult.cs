@@ -164,53 +164,53 @@ public sealed class RoundResult
         {
             var parts = new List<string>();
             parts.AddRange(_relations);
-            AddBlockLines(parts, "玩家", PlayerUniversalBlocks, PlayerWineBlocks, PlayerDodgeBlocks, PlayerKillDodgeBlocks, PlayerFireKillDodgeBlocks, PlayerArrowDodgeBlocks, PlayerThunderCounterBlocks, PlayerSureKillCounterBlocks, PlayerArrowCounterBlocks, PlayerStealCounterBlocks, PlayerQingnangDodgeBlocks, PlayerDodgeFailed, PlayerSureKillDodgeFailed, PlayerNanmanDodgeFailed);
-            AddBlockLines(parts, "敌方", EnemyUniversalBlocks, EnemyWineBlocks, EnemyDodgeBlocks, EnemyKillDodgeBlocks, EnemyFireKillDodgeBlocks, EnemyArrowDodgeBlocks, EnemyThunderCounterBlocks, EnemySureKillCounterBlocks, EnemyArrowCounterBlocks, EnemyStealCounterBlocks, EnemyQingnangDodgeBlocks, EnemyDodgeFailed, EnemySureKillDodgeFailed, EnemyNanmanDodgeFailed);
+            AddBlockLines(parts, Localization.Get("battle.player_name"), PlayerUniversalBlocks, PlayerWineBlocks, PlayerDodgeBlocks, PlayerKillDodgeBlocks, PlayerFireKillDodgeBlocks, PlayerArrowDodgeBlocks, PlayerThunderCounterBlocks, PlayerSureKillCounterBlocks, PlayerArrowCounterBlocks, PlayerStealCounterBlocks, PlayerQingnangDodgeBlocks, PlayerDodgeFailed, PlayerSureKillDodgeFailed, PlayerNanmanDodgeFailed);
+            AddBlockLines(parts, Localization.Get("battle.enemy_name"), EnemyUniversalBlocks, EnemyWineBlocks, EnemyDodgeBlocks, EnemyKillDodgeBlocks, EnemyFireKillDodgeBlocks, EnemyArrowDodgeBlocks, EnemyThunderCounterBlocks, EnemySureKillCounterBlocks, EnemyArrowCounterBlocks, EnemyStealCounterBlocks, EnemyQingnangDodgeBlocks, EnemyDodgeFailed, EnemySureKillDodgeFailed, EnemyNanmanDodgeFailed);
             parts.AddRange(_lines);
 
             if (PlayerHeal > 0)
             {
-                parts.Add($"玩家恢复{PlayerHeal}点生命。");
+                parts.Add(Localization.GetFmt("battle.result.heal_fmt", Localization.Get("battle.player_name"), PlayerHeal));
             }
             if (EnemyHeal > 0)
             {
-                parts.Add($"敌方恢复{EnemyHeal}点生命。");
+                parts.Add(Localization.GetFmt("battle.result.heal_fmt", Localization.Get("battle.enemy_name"), EnemyHeal));
             }
             if (PlayerManaGain > 0)
             {
-                parts.Add($"玩家获得{BattleRules.FormatMana(PlayerManaGain)}点费用。");
+                parts.Add(Localization.GetFmt("battle.result.mana_gain_fmt", Localization.Get("battle.player_name"), BattleRules.FormatMana(PlayerManaGain)));
             }
             if (EnemyManaGain > 0)
             {
-                parts.Add($"敌方获得{BattleRules.FormatMana(EnemyManaGain)}点费用。");
+                parts.Add(Localization.GetFmt("battle.result.mana_gain_fmt", Localization.Get("battle.enemy_name"), BattleRules.FormatMana(EnemyManaGain)));
             }
             if (PlayerStealGain > 0)
             {
-                parts.Add($"玩家窃取{BattleRules.FormatMana(PlayerStealGain)}点费用。");
+                parts.Add(Localization.GetFmt("battle.result.mana_steal_fmt", Localization.Get("battle.player_name"), BattleRules.FormatMana(PlayerStealGain)));
             }
             if (EnemyStealGain > 0)
             {
-                parts.Add($"敌方窃取{BattleRules.FormatMana(EnemyStealGain)}点费用。");
+                parts.Add(Localization.GetFmt("battle.result.mana_steal_fmt", Localization.Get("battle.enemy_name"), BattleRules.FormatMana(EnemyStealGain)));
             }
             if (PlayerWineGain > 0)
             {
-                parts.Add($"玩家获得酒状态 ×{PlayerWineGain}（下一回合杀系伤害 ×{FormatMultiplier(BattleRules.GetWineDamageMultiplier(PlayerWineGain) + GameManager.WineDamageMultiplierBonus)}）。");
+                parts.Add(Localization.GetFmt("battle.result.wine_gain_fmt", Localization.Get("battle.player_name"), PlayerWineGain, FormatMultiplier(BattleRules.GetWineDamageMultiplier(PlayerWineGain) + GameManager.WineDamageMultiplierBonus)));
             }
             if (EnemyWineGain > 0)
             {
-                parts.Add($"敌方获得酒状态 ×{EnemyWineGain}（下一回合杀系伤害 ×{BattleRules.GetWineDamageMultiplier(EnemyWineGain)}）。");
+                parts.Add(Localization.GetFmt("battle.result.wine_gain_fmt", Localization.Get("battle.enemy_name"), EnemyWineGain, BattleRules.GetWineDamageMultiplier(EnemyWineGain)));
             }
             if (PlayerDamage > 0)
             {
-                parts.Add($"玩家受到{PlayerDamage}点伤害。");
+                parts.Add(Localization.GetFmt("battle.result.damage_taken_fmt", Localization.Get("battle.player_name"), PlayerDamage));
             }
             if (EnemyDamage > 0)
             {
-                parts.Add($"敌方受到{EnemyDamage}点伤害。");
+                parts.Add(Localization.GetFmt("battle.result.damage_taken_fmt", Localization.Get("battle.enemy_name"), EnemyDamage));
             }
             if (parts.Count == 0)
             {
-                parts.Add("无人受伤。");
+                parts.Add(Localization.Get("battle.result.no_damage"));
             }
 
             return string.Join("\n", parts);
@@ -775,7 +775,7 @@ public sealed class RoundResult
         }
 
         PlayerDamage = 0;
-        AddLine("龙胆使玩家受到的伤害无效。");
+        AddLine(Localization.Get("battle.result.longdan_nullified"));
         return amount;
     }
 
@@ -791,10 +791,10 @@ public sealed class RoundResult
             return;
         }
 
-        AddLine($"{ownerName}酒状态生效。");
-        AddLine($"酒层数：{wineStacks}");
-        AddLine($"酒倍率：×{FormatMultiplier(wineMultiplier)}");
-        AddLine($"酒结算后伤害：{finalDamage}");
+        AddLine(Localization.GetFmt("battle.result.wine_active_fmt", ownerName));
+        AddLine(Localization.GetFmt("battle.result.wine_stacks_fmt", wineStacks));
+        AddLine(Localization.GetFmt("battle.result.wine_multiplier_fmt", FormatMultiplier(wineMultiplier)));
+        AddLine(Localization.GetFmt("battle.result.wine_damage_fmt", finalDamage));
     }
 
     /// <summary>
@@ -804,15 +804,15 @@ public sealed class RoundResult
     /// </summary>
     public void AddDamageCalculation(string sourceName, string targetName, string attackName, int baseDamage, int flatBonus, double wineMultiplier, int specialMultiplier, int vulnerableMultiplier, int wushuangMultiplier, int wineStacks, int finalDamage)
     {
-        AddLine($"{sourceName} 对 {targetName} 的{attackName}伤害结算：");
-        AddLine($"基础伤害：{baseDamage}");
-        AddLine($"固定加伤：+{flatBonus}");
-        AddLine($"酒倍率：×{FormatMultiplier(wineMultiplier)}");
-        AddLine($"特殊倍率：×{specialMultiplier}");
-        AddLine($"易伤/减伤倍率：×{vulnerableMultiplier}");
-        AddLine($"无双倍率：×{wushuangMultiplier}");
-        AddLine($"酒层数：{wineStacks}");
-        AddLine($"最终伤害：{finalDamage}");
+        AddLine(Localization.GetFmt("battle.result.damage_calc_header_fmt", sourceName, targetName, attackName));
+        AddLine(Localization.GetFmt("battle.result.base_damage_fmt", baseDamage));
+        AddLine(Localization.GetFmt("battle.result.flat_bonus_fmt", flatBonus));
+        AddLine(Localization.GetFmt("battle.result.wine_multiplier_fmt", FormatMultiplier(wineMultiplier)));
+        AddLine(Localization.GetFmt("battle.result.special_multiplier_fmt", specialMultiplier));
+        AddLine(Localization.GetFmt("battle.result.vulnerability_multiplier_fmt", vulnerableMultiplier));
+        AddLine(Localization.GetFmt("battle.result.wushuang_multiplier_fmt", wushuangMultiplier));
+        AddLine(Localization.GetFmt("battle.result.wine_stacks_fmt", wineStacks));
+        AddLine(Localization.GetFmt("battle.result.final_damage_fmt", finalDamage));
     }
 
     private static string FormatMultiplier(double value)
@@ -824,59 +824,59 @@ public sealed class RoundResult
     {
         if (universalBlocks > 0)
         {
-            parts.Add($"{ownerName}桃护盾抵挡{universalBlocks}次伤害。");
+            parts.Add(Localization.GetFmt("battle.result.peach_blocks_fmt", ownerName, universalBlocks));
         }
         if (wineBlocks > 0)
         {
-            parts.Add($"{ownerName}酒护盾抵挡{wineBlocks}次伤害，酒状态减少{wineBlocks}层。");
+            parts.Add(Localization.GetFmt("battle.result.wine_blocks_fmt", ownerName, wineBlocks));
         }
         if (killDodgeBlocks > 0)
         {
-            parts.Add($"{ownerName}闪抵消全部杀。");
+            parts.Add(Localization.GetFmt("battle.result.dodge_all_kill_fmt", ownerName));
         }
         if (fireKillDodgeBlocks > 0)
         {
-            parts.Add($"{ownerName}闪抵消全部火杀。");
+            parts.Add(Localization.GetFmt("battle.result.dodge_all_fire_fmt", ownerName));
         }
         if (arrowDodgeBlocks > 0)
         {
-            parts.Add($"{ownerName}闪抵消全部万箭齐发。");
+            parts.Add(Localization.GetFmt("battle.result.dodge_all_arrows_fmt", ownerName));
         }
         if (dodgeBlocks > 0 && killDodgeBlocks == 0 && fireKillDodgeBlocks == 0 && arrowDodgeBlocks == 0)
         {
-            parts.Add($"{ownerName}闪抵挡{dodgeBlocks}次伤害。");
+            parts.Add(Localization.GetFmt("battle.result.dodge_blocks_fmt", ownerName, dodgeBlocks));
         }
         if (thunderCounterBlocks > 0)
         {
-            parts.Add($"{ownerName}无懈可击抵消全部雷杀。");
+            parts.Add(Localization.GetFmt("battle.result.counter_all_thunder_fmt", ownerName));
         }
         if (sureKillCounterBlocks > 0)
         {
-            parts.Add($"{ownerName}无懈可击抵消全部必中杀。");
+            parts.Add(Localization.GetFmt("battle.result.counter_all_sure_fmt", ownerName));
         }
         if (arrowCounterBlocks > 0)
         {
-            parts.Add($"{ownerName}无懈可击抵消全部万箭齐发。");
+            parts.Add(Localization.GetFmt("battle.result.counter_all_arrows_fmt", ownerName));
         }
         if (stealCounterBlocks > 0)
         {
-            parts.Add($"{ownerName}无懈可击抵消全部顺手牵羊。");
+            parts.Add(Localization.GetFmt("battle.result.counter_all_steal_fmt", ownerName));
         }
         if (qingnangDodgeBlocks > 0)
         {
-            parts.Add($"{ownerName}青囊闪避抵挡{qingnangDodgeBlocks}次伤害。");
+            parts.Add(Localization.GetFmt("battle.result.qingnang_blocks_fmt", ownerName, qingnangDodgeBlocks));
         }
         if (dodgeFailed > 0)
         {
-            parts.Add($"{ownerName}闪无法抵挡雷杀。");
+            parts.Add(Localization.GetFmt("battle.result.dodge_failed_thunder_fmt", ownerName));
         }
         if (sureKillDodgeFailed > 0)
         {
-            parts.Add($"{ownerName}闪无法抵挡必中杀。");
+            parts.Add(Localization.GetFmt("battle.result.dodge_failed_sure_fmt", ownerName));
         }
         if (nanmanDodgeFailed > 0)
         {
-            parts.Add($"{ownerName}闪无法抵挡南蛮入侵。");
+            parts.Add(Localization.GetFmt("battle.result.dodge_failed_nanman_fmt", ownerName));
         }
     }
 }

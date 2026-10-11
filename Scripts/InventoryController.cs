@@ -120,7 +120,12 @@ public partial class InventoryController : Control
 
         if (IntegratedTutorialFlow.IsActive && !ReadOnly)
         {
-            _tutorialLayer = new TutorialHighlightLayer();
+            // 背包页右侧是出售区和芯片统计；教程说明卡固定在右上角会遮挡这两项关键交互。
+            // 改为下方居中，仍能阅读说明，同时完整保留背包、槽位和出售栏的可见性。
+            _tutorialLayer = new TutorialHighlightLayer
+            {
+                GuidePanelPlacement = TutorialGuidePanelPlacement.BottomCenter
+            };
             AddChild(_tutorialLayer);
             RefreshTutorialStep();
         }
@@ -857,7 +862,7 @@ public partial class InventoryController : Control
                 "equipment.reforge.success_fmt",
                 Localization.GetName(original),
                 Localization.GetName(replacement))
-            : "重铸器已触发，但未能读取重铸结果。";
+            : Localization.Get("equipment.reforge.result_unavailable");
 
         var dialog = new AcceptDialog
         {

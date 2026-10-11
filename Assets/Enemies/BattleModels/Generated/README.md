@@ -35,3 +35,7 @@ giant_rolling_log
 ```
 
 其中 `giant_rolling_stone` 与 `giant_rolling_log` 用于藏宝阁支线战斗；下水道路线敌人也已包含在内。
+
+## 第四章・深渊敌人
+
+`scout`、`ju_kou` 与 `abyss_symbiote` 分别使用 `ch4_scout_abyss_pixel_v1.png`、`ch4_giant_maw_abyss_pixel_v1.png`、`ch4_abyss_symbiote_pixel_v1.png`。三者均通过 `ChapterFourPortraitTextures` 映射到 128×160 逻辑像素画布：侦测者以单眼扫描灯识别，巨口以多环牙齿和吸血黏液识别，共生体以寄生甲壳和短刃识别。

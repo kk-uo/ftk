@@ -20,8 +20,8 @@
 
 using System.Collections.Generic;
 
-// 化形（左·慈专属·传奇）：战斗开始时触发，复制玩家当前血量/技能/装备。
-// 保留【化形】和【仙毫】，排除芯片加成装备，复制仅发生一次。
+// 化形（左·慈专属·传奇）：战斗开始时以敌方角色基础生命+防御芯片为新基础，
+// 获得敌方技能/装备，同时保留自身既有的技能、装备与芯片类加成。
 /// <summary>
 /// Skill Effect System 的公开类：HuaXingEffect。
 ///
@@ -49,13 +49,6 @@ public sealed class HuaXingTransformEffect : IBattleEffect
     public TriggerTiming Timing => TriggerTiming.OnGameStart;
     public EffectPriority Priority => EffectPriority.High;
 
-    private static bool IsChip(string equipmentId)
-    {
-        return equipmentId is EquipmentIds.AttackChip
-            or EquipmentIds.ExpansionChip
-            or EquipmentIds.MysteriousChip;
-    }
-
     private static void InitializeRuntimeState(EnemyInstance enemy, string equipmentId)
     {
         switch (equipmentId)
@@ -73,9 +66,25 @@ public sealed class HuaXingTransformEffect : IBattleEffect
                 {
                     enemy.RuntimeStates["clamp_exo_active"] = true;
                     enemy.RuntimeStates["clamp_exo_repair_pending"] = false;
+                    enemy.RuntimeStates["clamp_exo_invincible_this_round"] = false;
                 }
                 break;
         }
+    }
+
+    private static int GetEquipmentMaxHpBonus(string equipmentId)
+    {
+        return equipmentId switch
+        {
+            EquipmentIds.Tengjia or EquipmentIds.RustShield or EquipmentIds.ScaleArmor => 10,
+            EquipmentIds.GangDun => 30,
+            EquipmentIds.GiantShield => 45,
+            EquipmentIds.SilverLion => 20,
+            EquipmentIds.IronHeavyArmor => 20,
+            EquipmentIds.ClampExoskeleton => 80,
+            EquipmentIds.Conductor or EquipmentIds.TycoonArmor => 10,
+            _ => 0
+        };
     }
 
     /// <summary>
@@ -98,34 +107,13 @@ public sealed class HuaXingTransformEffect : IBattleEffect
         }
         if (zuoci == null) return;
 
-        var playerHp = context.Player.Health;
+        // 仅以角色原始生命和防御芯片计算基础值：不读取玩家战斗中的当前生命、
+        // 临时生命、装备、技能或其它事件加成。这样【化形】不会把一时的治疗/扣血
+        // 或外部最大生命加成错误当作角色本体。
+        var playerBaseHealth = (GameManager.CurrentCharacter?.MaxHp ?? context.Player.MaxHealth)
+            + GameManager.DefenseChipCount * 10 * FactionFateManager.GetChipEffectMultiplier();
 
-        // 清除自身技能（保留化形）
-        var skillsToRemove = new List<string>();
-        foreach (var skill in zuoci.Skills)
-        {
-            if (skill.Id != SkillIds.HuaXing)
-                skillsToRemove.Add(skill.Id);
-        }
-        foreach (var skillId in skillsToRemove)
-            zuoci.RemoveSkill(skillId);
-
-        // 清除自身装备（保留仙毫）
-        zuoci.Equipments.RemoveAll(e => e.Id != EquipmentIds.XianHao);
-
-        // 设置生命值为玩家当前血量
-        zuoci.DebugSetMaxHealth(playerHp);
-        zuoci.DebugSetHealth(playerHp);
-
-        // 重新套用一次"战斗开始生命缩放"（诅咒之夜等局内Buff的百分比生命加成 + 初始事件③
-        // 精英/Boss+30%生命）——这两项在 EnemyFactory.CreateEnemy 里已经算过一次，但当时
-        // zuoci 的 MaxHealth 还是基础值1，算出来的加成接近0，而且会被上面这次覆盖直接冲掉。
-        // 不重新套用的话，左·慈会是全场唯一不受这些全局生命缩放规则影响的Boss。
-        // ApplyBattleStartHpScaling 内部统一走 AddMaxHealth，会按同样的量同步提升当前生命值
-        // （此时 Health 已经等于 MaxHealth，提升后两者会继续保持相等），不需要额外再设置一次。
-        EnemyFactory.ApplyBattleStartHpScaling(zuoci, zuoci.Definition);
-
-        // 复制玩家技能
+        // 保留左慈原有技能，并叠加敌方技能；同 ID 不重复添加。
         var copiedSkillNames = new List<string>();
         foreach (var skill in context.Player.Skills)
         {
@@ -136,22 +124,36 @@ public sealed class HuaXingTransformEffect : IBattleEffect
             }
         }
 
-        // 复制玩家装备（排除芯片）
+        // 保留左慈原有装备，并获得敌方已装备的装备。芯片不是背包装备，已在基础
+        // 生命值中处理防御芯片；攻击/知识芯片不会被伪装成可装备物品。
         var copiedEquipNames = new List<string>();
         foreach (var equipDef in InventoryManager.GetEquippedDefinitions())
         {
-            if (IsChip(equipDef.Id)) continue;
-            zuoci.Equipments.Add(equipDef);
-            copiedEquipNames.Add(Localization.GetName(equipDef));
-            InitializeRuntimeState(zuoci, equipDef.Id);
+            if (!zuoci.HasEquipment(equipDef.Id))
+            {
+                zuoci.Equipments.Add(equipDef);
+                copiedEquipNames.Add(Localization.GetName(equipDef));
+                InitializeRuntimeState(zuoci, equipDef.Id);
+            }
         }
+
+        // 先设置“化形基础生命”，再按保留/复制后的装备统一补上生命修正。
+        // 这保证“基础值不包括装备”与“获得装备后装备仍有效”同时成立。
+        var equipmentHealth = 0;
+        foreach (var equipment in zuoci.Equipments)
+        {
+            equipmentHealth += GetEquipmentMaxHpBonus(equipment.Id);
+        }
+        var difficultyBossHealth = DifficultyManager.GetBossHealthBonus(GameManager.CurrentChapter);
+        zuoci.DebugSetMaxHealth(playerBaseHealth + equipmentHealth + difficultyBossHealth);
+        zuoci.DebugSetHealth(zuoci.MaxHealth);
 
         // 战斗日志
         var skillText = copiedSkillNames.Count > 0 ? string.Join("、", copiedSkillNames) : "（无）";
         var equipText = copiedEquipNames.Count > 0 ? string.Join("、", copiedEquipNames) : "（无）";
-        context.RoundResult.AddLine($"左·慈发动【化形】：生命值变为 {playerHp}/{playerHp}。");
+        context.RoundResult.AddLine($"左·慈发动【化形】：基础生命变为 {playerBaseHealth}（含防御芯片，不含装备/技能加成），当前生命 {zuoci.Health}/{zuoci.MaxHealth}。");
         context.RoundResult.AddLine($"化形复制技能：{skillText}。");
         context.RoundResult.AddLine($"化形复制装备：{equipText}。");
-        context.AddTriggerLog($"[化形] HP={playerHp}，技能=[{skillText}]，装备=[{equipText}]");
+        context.AddTriggerLog($"[化形] BaseHP={playerBaseHealth}，技能=[{skillText}]，装备=[{equipText}]");
     }
 }

@@ -37,31 +37,18 @@ public sealed class BrokenEmotionalComponentEffect : IBattleEffect
     /// </summary>
     public void Execute(BattleContext context)
     {
-        // 场上任何一方（玩家或任意存活敌人，例如精英"失心者"）持有本装备都应触发这个
-        // "全场回血"效果——不能只检查玩家是否持有，否则给敌人配这件装备会完全不生效。
-        var hasComponent = GameManager.HasEquipment(EquipmentIds.BrokenEmotionalComponent);
-        if (!hasComponent)
-        {
-            var enemiesForCheck = context.Encounter?.Enemies;
-            if (enemiesForCheck != null)
-            {
-                foreach (var enemyCheck in enemiesForCheck)
-                {
-                    if (!enemyCheck.IsDead && enemyCheck.HasEquipment(EquipmentIds.BrokenEmotionalComponent))
-                    {
-                        hasComponent = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (!hasComponent)
+        // 场上任何存活单位持有本装备都应触发全场治疗。这里显式枚举持有者，避免
+        // 仅通过 GameManager（只保存玩家背包）判断时漏掉敌方精英/首领的装备。
+        var owner = FindActiveOwner(context);
+        if (owner == null)
         {
             return;
         }
 
         const int healAmount = 10;
+        context.RoundResult.AddLine(Localization.GetFmt("battle.equipment.broken_emotion_start_fmt", owner.DisplayName, healAmount));
+        context.AddTriggerLog("[Equipment/破碎情感组件]");
+        context.AddTriggerLog($"持有者：{owner.DisplayName}；结算全场恢复{healAmount}点生命值。");
 
         if (context.Player.Health > 0 && !context.GameOver)
         {
@@ -73,7 +60,7 @@ public sealed class BrokenEmotionalComponentEffect : IBattleEffect
                 new HealthChangeSource(HealthChangeSourceKind.Equipment, "破碎情感组件", EquipmentIds.BrokenEmotionalComponent, context.Player)).HealedAmount;
             if (healed > 0)
             {
-                context.RoundResult.AddLine($"破碎情感组件：{context.Player.DisplayName}恢复{healed}点生命值。");
+                context.RoundResult.AddLine(Localization.GetFmt("battle.equipment.broken_emotion_heal_fmt", context.Player.DisplayName, healed));
                 context.AddTriggerLog($"[Equipment/破碎情感组件] {context.Player.DisplayName}恢复{healed}点生命值。");
             }
         }
@@ -99,9 +86,33 @@ public sealed class BrokenEmotionalComponentEffect : IBattleEffect
                 new HealthChangeSource(HealthChangeSourceKind.Equipment, "破碎情感组件", EquipmentIds.BrokenEmotionalComponent, enemy)).HealedAmount;
             if (healed > 0)
             {
-                context.RoundResult.AddLine($"破碎情感组件：{enemy.DisplayName}恢复{healed}点生命值。");
+                context.RoundResult.AddLine(Localization.GetFmt("battle.equipment.broken_emotion_heal_fmt", enemy.DisplayName, healed));
                 context.AddTriggerLog($"[Equipment/破碎情感组件] {enemy.DisplayName}恢复{healed}点生命值。");
             }
         }
+    }
+
+    private static Player? FindActiveOwner(BattleContext context)
+    {
+        if (!context.Player.IsDead && GameManager.HasEquipment(EquipmentIds.BrokenEmotionalComponent))
+        {
+            return context.Player;
+        }
+
+        var enemies = context.Encounter?.Enemies;
+        if (enemies == null)
+        {
+            return null;
+        }
+
+        foreach (var enemy in enemies)
+        {
+            if (!enemy.IsDead && enemy.HasEquipment(EquipmentIds.BrokenEmotionalComponent))
+            {
+                return enemy;
+            }
+        }
+
+        return null;
     }
 }

@@ -77,6 +77,7 @@ public partial class BattleManager
         public TemporaryEnemyStageVisual Visual { get; }
         public Tween? IdleTween { get; set; }
         public Tween? AttackTween { get; set; }
+        public TraitorWeaponVisual? WeaponVisual { get; set; }
     }
 
     private static readonly TemporaryEnemyStageVisual NormalEnemyFallbackStageVisual = new(
@@ -187,16 +188,30 @@ public partial class BattleManager
             "res://Assets/Enemies/BattleModels/Runtime/giant_rolling_log.png",
             2.4f,
             12f),
+        // 第四章·深渊：专用克苏鲁像素立绘。原稿由 ChapterFourPortraitTextures
+        // 归并为统一逻辑画布，避免多敌人同场时出现比例失衡。
+        ["scout"] = new TemporaryEnemyStageVisual(
+            ChapterFourPortraitTextures.Scout,
+            2.25f,
+            12f),
+        ["ju_kou"] = new TemporaryEnemyStageVisual(
+            ChapterFourPortraitTextures.GiantMaw,
+            2.25f,
+            12f),
+        ["abyss_symbiote"] = new TemporaryEnemyStageVisual(
+            ChapterFourPortraitTextures.AbyssSymbiote,
+            2.25f,
+            12f),
         ["crazy_performer"] = new TemporaryEnemyStageVisual(
-            "res://Assets/Bosses/BattlePortraits/Runtime/crazy_performer.png",
+            BossPortraitTextures.Performer,
             2.45f,
             12f),
         ["boss_healer"] = new TemporaryEnemyStageVisual(
-            "res://Assets/Bosses/BattlePortraits/Runtime/boss_healer.png",
+            BossPortraitTextures.Healer,
             2.45f,
             12f),
         ["boss_traitor"] = new TemporaryEnemyStageVisual(
-            "res://Assets/Bosses/BattlePortraits/Runtime/boss_traitor.png",
+            BossPortraitTextures.Traitor,
             2.45f,
             12f),
         ["wulong_collective_intelligence"] = new TemporaryEnemyStageVisual(
@@ -241,7 +256,7 @@ public partial class BattleManager
             12f,
             isFullWidthBackdrop: true),
         ["huan_xiang_chu_shou"] = new TemporaryEnemyStageVisual(
-            "res://Assets/Bosses/BattlePortraits/Runtime/huan_xiang_chu_shou.png",
+            ChapterFourPortraitTextures.PhantomTentacle,
             2.10f,
             12f)
     };
@@ -400,6 +415,13 @@ public partial class BattleManager
             OnEnemyStageVisualInput);
 
         var presentation = new EnemyStagePresentation(enemy, modelAnchor, model, hoverArea, statusUi, presenter, visual);
+        // 背叛者 v4 的戟已经画入主体像素立绘，不能再叠加旧版独立武器层，
+        // 否则会在角色右侧出现第二把不匹配的旧武器。
+        if (enemy.Definition.Id == "boss_traitor" && !BossPortraitTextures.TraitorHasEmbeddedHalberd)
+        {
+            presentation.WeaponVisual = new TraitorWeaponVisual { Name = "TraitorHalberd" };
+            model.AddChild(presentation.WeaponVisual);
+        }
         StartEnemyIdleAnimation(presentation);
         return presentation;
     }
@@ -448,6 +470,7 @@ public partial class BattleManager
         presentation.AttackTween?.Kill();
 
         var baseScale = new Vector2(presentation.Visual.Scale, presentation.Visual.Scale);
+        presentation.WeaponVisual?.PlayAttack();
         presentation.Model.Position = Vector2.Zero;
         presentation.Model.Scale = baseScale;
 
@@ -493,6 +516,10 @@ public partial class BattleManager
     {
         if (ElitePortraitTextures.IsElitePortrait(texturePath))
             return ElitePortraitTextures.Load(texturePath);
+        if (BossPortraitTextures.IsBossPortrait(texturePath))
+            return BossPortraitTextures.Load(texturePath);
+        if (ChapterFourPortraitTextures.IsAbyssPortrait(texturePath))
+            return ChapterFourPortraitTextures.Load(texturePath);
         return LoadPresentationTexture(texturePath);
     }
 
